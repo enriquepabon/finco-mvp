@@ -24,6 +24,35 @@ export default function RootLayout({
 }>) {
   return (
     <html lang="en" suppressHydrationWarning>
+      <head>
+        <script
+          dangerouslySetInnerHTML={{
+            __html: `
+              // Suprimir errores de extensiones de navegador
+              window.addEventListener('error', function(e) {
+                if (e.filename && e.filename.includes('chrome-extension://')) {
+                  e.preventDefault();
+                  return false;
+                }
+              });
+              
+              // Suprimir errores de MetaMask y otras extensiones Web3
+              window.addEventListener('unhandledrejection', function(e) {
+                if (e.reason && typeof e.reason === 'object') {
+                  if (e.reason.message && (
+                    e.reason.message.includes('MetaMask') ||
+                    e.reason.message.includes('chrome-extension') ||
+                    e.reason.message.includes('ethereum')
+                  )) {
+                    e.preventDefault();
+                    return false;
+                  }
+                }
+              });
+            `,
+          }}
+        />
+      </head>
       <body
         className={`${geistSans.variable} ${geistMono.variable} antialiased`}
         suppressHydrationWarning

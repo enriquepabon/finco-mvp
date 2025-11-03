@@ -28,6 +28,13 @@ import FinancialProfile from './components/FinancialProfile';
 import FinancialIndicators from './components/FinancialIndicators';
 import PatrimonyChart from './components/PatrimonyChart';
 import CashFlowChart from './components/CashFlowChart';
+import FinancialReport from '../../components/dashboard/FinancialReport';
+
+import BudgetSection from './components/BudgetSection';
+import CashbeatLogo from '@/components/ui/CashbeatLogo';
+import CashbeatFloatingButton from '@/components/ui/CashbeatFloatingButton';
+import AdvancedChatModal from '@/components/chat/AdvancedChatModal';
+import TransactionButton from '@/components/transactions/TransactionButton';
 
 interface UserProfile {
   id: string;
@@ -49,6 +56,7 @@ export default function Dashboard() {
   const [profile, setProfile] = useState<UserProfile | null>(null);
   const [loading, setLoading] = useState(true);
   const [activeSection, setActiveSection] = useState('overview');
+  const [isChatModalOpen, setIsChatModalOpen] = useState(false);
   const router = useRouter();
 
   useEffect(() => {
@@ -71,7 +79,8 @@ export default function Dashboard() {
         .from('user_profiles')
         .select('*')
         .eq('user_id', authUser.id)
-        .single();
+        .limit(1)
+        .maybeSingle();
 
       if (profileError) {
         console.error('Error obteniendo perfil:', profileError?.message || profileError);
@@ -81,6 +90,12 @@ export default function Dashboard() {
           return;
         }
       } else if (profileData) {
+        // Verificar si completó el onboarding
+        if (!profileData.onboarding_completed) {
+          console.log('⚠️ Usuario sin onboarding completado, redirigiendo...');
+          router.push('/onboarding');
+          return;
+        }
         setProfile(profileData);
       }
 
@@ -115,8 +130,8 @@ export default function Dashboard() {
     return (
       <div className="min-h-screen bg-gradient-to-br from-blue-50 to-indigo-100 flex items-center justify-center">
         <div className="text-center">
-          <div className="text-6xl mb-4">🤖</div>
-          <h2 className="text-2xl font-bold text-gray-800 mb-2">¡Bienvenido a FINCO!</h2>
+          <CashbeatLogo variant="chat" size="large" />
+          <h2 className="text-2xl font-bold text-gray-800 mb-2 mt-4">¡Bienvenido a Cashbeat!</h2>
           <p className="text-gray-600 mb-6">Necesitas completar tu onboarding para acceder al dashboard.</p>
           <button
             onClick={() => router.push('/onboarding')}
@@ -137,7 +152,8 @@ export default function Dashboard() {
   const navigationItems = [
     { id: 'overview', name: 'Resumen', icon: BarChart3 },
     { id: 'profile', name: 'Perfil', icon: User },
-    { id: 'budget', name: 'Presupuesto', icon: Wallet, comingSoon: true },
+    { id: 'budget', name: 'Presupuesto', icon: Wallet },
+    { id: 'report', name: 'Reporte', icon: PieChart },
     { id: 'investments', name: 'Inversiones', icon: TrendingUp, comingSoon: true },
     { id: 'goals', name: 'Metas', icon: Target, comingSoon: true },
     { id: 'insurance', name: 'Seguros', icon: Shield, comingSoon: true },
@@ -148,13 +164,13 @@ export default function Dashboard() {
       {/* Header */}
       <header className="bg-white shadow-sm border-b border-gray-200">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-          <div className="flex justify-between items-center h-16">
+          <div className="flex justify-between items-center h-20">
             <div className="flex items-center space-x-4">
-              <div className="flex items-center space-x-2">
-                <div className="w-8 h-8 bg-blue-600 rounded-lg flex items-center justify-center">
-                  <span className="text-white font-bold text-sm">F</span>
+              <div className="flex items-center">
+                <div className="relative">
+                  <CashbeatLogo variant="main" size="medium" />
+                  <div className="absolute -bottom-1 -right-1 w-3 h-3 bg-green-500 border-2 border-white rounded-full"></div>
                 </div>
-                <h1 className="text-xl font-bold text-gray-900">FINCO</h1>
               </div>
             </div>
             
@@ -215,6 +231,17 @@ export default function Dashboard() {
               debtRatio={debtRatio}
             />
 
+            {/* Registro de Transacciones */}
+            <div className="bg-gradient-to-r from-blue-500 to-indigo-600 rounded-xl shadow-lg p-6 text-white">
+              <div className="flex items-center justify-between mb-4">
+                <div>
+                  <h3 className="text-xl font-bold mb-1">📝 Registrar Transacciones</h3>
+                  <p className="text-blue-100 text-sm">Lleva control de tus ingresos y gastos en tiempo real</p>
+                </div>
+              </div>
+              <TransactionButton variant="inline" className="w-full" />
+            </div>
+
             {/* Charts Row */}
             <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">
               <PatrimonyChart profile={profile} />
@@ -236,8 +263,16 @@ export default function Dashboard() {
           </div>
         )}
 
+        {activeSection === 'budget' && (
+          <BudgetSection userId={user?.id || ''} />
+        )}
+
+        {activeSection === 'report' && (
+          <FinancialReport />
+        )}
+
         {/* Coming Soon Sections */}
-        {['budget', 'investments', 'goals', 'insurance'].includes(activeSection) && (
+        {['investments', 'goals', 'insurance'].includes(activeSection) && (
           <div className="text-center py-16">
             <div className="text-6xl mb-4">🚧</div>
             <h2 className="text-2xl font-bold text-gray-800 mb-2">Sección en Construcción</h2>
@@ -253,6 +288,18 @@ export default function Dashboard() {
           </div>
         )}
       </div>
+      {/* Botón flotante de Cashbeat IA */}
+      <CashbeatFloatingButton
+        onClick={() => setIsChatModalOpen(true)}
+        hasNotifications={false}
+        notificationCount={0}
+      />
+
+      {/* Modal de Chat Avanzado */}
+      <AdvancedChatModal
+        isOpen={isChatModalOpen}
+        onClose={() => setIsChatModalOpen(false)}
+      />
     </div>
   );
 } 

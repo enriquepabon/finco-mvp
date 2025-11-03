@@ -1,90 +1,58 @@
-// Test simple del parser sin TypeScript
-console.log('🧪 Probando funciones básicas del parser...\n');
+// Test simple para el parser de edición de perfil
+console.log('🧪 Testing Profile Edit Parser...\n');
 
-// Función para parsear moneda colombiana
-function parseColombianCurrency(text) {
-  if (!text || typeof text !== 'string') return null;
+// Simulación básica del parser
+function testParseMessage(message) {
+  const lowerMessage = message.toLowerCase().trim();
   
-  // Limpiar el texto
-  let cleanText = text.toLowerCase()
-    .replace(/[,$\s]/g, '') // Remover comas, dólares, espacios
-    .replace(/cop|pesos?|peso/g, '') // Remover referencias a moneda
-    .replace(/usd|dolares?|dollar/g, '') // Remover referencias a dólares
-    .trim();
-
-  // Manejar expresiones como "10 millones", "5 mil", etc.
-  const millionPattern = /(\d+(?:\.\d+)?)\s*mill?on?e?s?/i;
-  const thousandPattern = /(\d+(?:\.\d+)?)\s*mil/i;
+  // Patrón para estado civil
+  const civilStatusPatterns = [
+    /(?:estado civil|situación)\s+(?:es|ahora es|cambiar a|actualizar a)\s+(soltero|casado|union libre|divorciado|viudo)/i,
+    /(?:soy|estoy|ahora soy)\s+(soltero|casado|en union libre|divorciado|viudo)/i,
+    /(?:cambiar|actualizar|modificar)\s+(?:mi )?estado civil\s+(?:a|por)\s+(soltero|casado|union libre|divorciado|viudo)/i,
+    /(?:actualiza|actualizar|cambiar|modificar)\s+(?:mi )?estado civil\s+(?:a|por|es|ahora es)\s+(soltero|casado|union libre|divorciado|viudo)/i,
+    /(?:mi )?estado civil\s+(?:es|ahora es|cambiar a|actualizar a)\s+(soltero|casado|union libre|divorciado|viudo)/i
+  ];
   
-  const millionMatch = text.match(millionPattern);
-  if (millionMatch) {
-    const baseNumber = parseFloat(millionMatch[1]);
-    return baseNumber * 1000000;
-  }
-  
-  const thousandMatch = text.match(thousandPattern);
-  if (thousandMatch) {
-    const baseNumber = parseFloat(thousandMatch[1]);
-    return baseNumber * 1000;
-  }
-  
-  // Parsear números directos
-  const numberMatch = cleanText.match(/(\d+(?:\.\d+)?)/);
-  if (numberMatch) {
-    const number = parseFloat(numberMatch[1]);
-    
-    // Si el número es muy pequeño, probablemente está en millones
-    if (number < 1000 && number > 0) {
-      return number * 1000000;
-    }
-    
-    return number;
-  }
-  
-  return null;
-}
-
-// Función para parsear edad
-function parseAge(text) {
-  if (!text || typeof text !== 'string') return null;
-  
-  const ageMatch = text.match(/(\d+)/);
-  if (ageMatch) {
-    const age = parseInt(ageMatch[1]);
-    // Validar rango razonable
-    if (age >= 18 && age <= 100) {
-      return age;
+  for (const pattern of civilStatusPatterns) {
+    const match = lowerMessage.match(pattern);
+    if (match && match[1]) {
+      return {
+        field: 'civil_status',
+        value: match[1],
+        confidence: 'high',
+        matched: true
+      };
     }
   }
   
-  return null;
+  return {
+    field: 'none',
+    value: undefined,
+    confidence: 'low',
+    matched: false
+  };
 }
 
-// Pruebas de moneda colombiana
-console.log('💰 Pruebas de moneda:');
-const currencyTests = [
-  '10 millones',
-  '10.000.000',
-  '$10,000,000 COP',
-  '20 mill',
-  '5.5 millones de pesos',
-  '1000000',
-  '22',
-  '22 millones de pesos colombianos'
+const testCases = [
+  'actualiza mi estado civil a casado',
+  'cambiar mi estado civil a soltero',
+  'mi estado civil es divorciado',
+  'estoy casado',
+  'soy soltero',
+  'actualizar estado civil por union libre'
 ];
 
-currencyTests.forEach(test => {
-  const result = parseColombianCurrency(test);
-  console.log(`  "${test}" → ${result ? result.toLocaleString() : 'null'}`);
+testCases.forEach((testCase, index) => {
+  console.log(`--- Test ${index + 1} ---`);
+  console.log(`Input: "${testCase}"`);
+  
+  const result = testParseMessage(testCase);
+  console.log(`Field: ${result.field}`);
+  console.log(`Value: ${result.value || 'none'}`);
+  console.log(`Confidence: ${result.confidence}`);
+  console.log(`Matched: ${result.matched ? '✅' : '❌'}`);
+  console.log('');
 });
 
-console.log('\n🎂 Pruebas de edad:');
-const ageTests = ['32 años', '28', 'tengo 45 años', 'soy de 25'];
-ageTests.forEach(test => {
-  const result = parseAge(test);
-  console.log(`  "${test}" → ${result}`);
-});
-
-console.log('\n✅ Pruebas básicas completadas!');
-console.log('\n📝 Las funciones del parser están funcionando correctamente.');
-console.log('🚀 Ahora puedes probar el onboarding completo en la aplicación.'); 
+console.log('✅ Test Complete!'); 

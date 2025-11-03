@@ -4,6 +4,7 @@ import { useEffect } from 'react';
 import { useRouter } from 'next/navigation';
 import Link from 'next/link';
 import { supabase } from '../../lib/supabase/client';
+import CashbeatLogo from '../components/ui/CashbeatLogo';
 
 export default function Home() {
   const router = useRouter();
@@ -17,9 +18,9 @@ export default function Home() {
         if (user && !error) {
           // Verificar si el usuario ya completó el onboarding
           const { data: profile, error: profileError } = await supabase
-            .from('profiles')
-            .select('onboarded')
-            .eq('id', user.id)
+            .from('user_profiles')
+            .select('onboarding_completed')
+            .eq('user_id', user.id)
             .single();
 
           if (profileError) {
@@ -30,7 +31,7 @@ export default function Home() {
             return;
           }
 
-          if (profile?.onboarded) {
+          if (profile?.onboarding_completed) {
             // Usuario ya completó onboarding, ir al dashboard
             console.log('🔄 Usuario con onboarding completado, redirigiendo al dashboard');
             router.push('/dashboard');
@@ -47,6 +48,7 @@ export default function Home() {
 
     checkAuthAndRedirect();
   }, [router]);
+
   return (
     <div className="min-h-screen bg-gradient-to-br from-blue-50 to-indigo-100">
       {/* Navigation */}
@@ -55,7 +57,7 @@ export default function Home() {
           <div className="flex justify-between h-16">
             <div className="flex items-center">
               <div className="flex-shrink-0">
-                <h1 className="text-2xl font-bold text-blue-600">🏦 FINCO</h1>
+                <CashbeatLogo variant="main" size="large" />
               </div>
             </div>
             <div className="flex items-center space-x-4">
@@ -84,7 +86,7 @@ export default function Home() {
             <span className="text-blue-600 block">Inteligente</span>
           </h1>
           <p className="text-xl text-gray-600 mb-8 max-w-3xl mx-auto">
-            FINCO te ayuda a gestionar tus finanzas personales de manera inteligente. 
+            Cashbeat te ayuda a gestionar tus finanzas personales de manera inteligente. 
             Controla gastos, establece metas de ahorro y recibe consejos personalizados 
             con inteligencia artificial.
           </p>
@@ -110,7 +112,7 @@ export default function Home() {
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
           <div className="text-center mb-12">
             <h2 className="text-3xl font-bold text-gray-900 mb-4">
-              ¿Por qué elegir FINCO?
+              ¿Por qué elegir Cashbeat?
             </h2>
             <p className="text-lg text-gray-600">
               Funcionalidades diseñadas para simplificar tu vida financiera
@@ -120,13 +122,13 @@ export default function Home() {
           <div className="grid md:grid-cols-3 gap-8">
             <div className="text-center p-6">
               <div className="bg-blue-100 rounded-full w-16 h-16 flex items-center justify-center mx-auto mb-4">
-                <span className="text-2xl">🤖</span>
+                <CashbeatLogo variant="chat" size="small" />
               </div>
               <h3 className="text-xl font-semibold text-gray-900 mb-2">
                 IA Conversacional
               </h3>
               <p className="text-gray-600">
-                Habla con FINCO como si fuera tu asesor financiero personal. 
+                Habla con Cashbeat como si fuera tu asesor financiero personal. 
                 Obtén consejos inteligentes y personalizados.
               </p>
             </div>
@@ -149,11 +151,11 @@ export default function Home() {
                 <span className="text-2xl">🎯</span>
               </div>
               <h3 className="text-xl font-semibold text-gray-900 mb-2">
-                Metas de Ahorro
+                Metas Inteligentes
               </h3>
               <p className="text-gray-600">
-                Establece objetivos financieros y sigue tu progreso. 
-                FINCO te motiva a alcanzar tus sueños.
+                Cashbeat te motiva a alcanzar tus sueños.
+                Define metas y recibe estrategias personalizadas.
               </p>
             </div>
           </div>
@@ -162,28 +164,26 @@ export default function Home() {
 
       {/* CTA Section */}
       <div className="bg-blue-600 py-16">
-        <div className="max-w-4xl mx-auto text-center px-4 sm:px-6 lg:px-8">
+        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 text-center">
           <h2 className="text-3xl font-bold text-white mb-4">
-            ¿Listo para tomar control de tus finanzas?
+            Únete a miles de usuarios que ya están mejorando su salud financiera con Cashbeat
           </h2>
           <p className="text-xl text-blue-100 mb-8">
-            Únete a miles de usuarios que ya están mejorando su salud financiera con FINCO
+            Tu futuro financiero comienza hoy. Es gratis y solo toma 5 minutos.
           </p>
           <Link
             href="/auth/register"
-            className="bg-white text-blue-600 hover:bg-gray-100 px-8 py-4 rounded-lg text-lg font-semibold transition-colors inline-block"
+            className="bg-white text-blue-600 px-8 py-4 rounded-lg text-lg font-semibold hover:bg-gray-100 transition-colors inline-block"
           >
-            Comenzar Gratis
+            Crear Mi Cuenta Gratis
           </Link>
         </div>
       </div>
 
       {/* Footer */}
-      <footer className="bg-gray-900 text-white py-8">
+      <footer className="bg-gray-800 text-gray-300 py-8">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 text-center">
-          <p className="text-gray-400">
-            © 2025 FINCO. Tu asistente financiero inteligente.
-          </p>
+          <p>© 2025 Cashbeat. Tu asistente financiero inteligente.</p>
         </div>
       </footer>
     </div>

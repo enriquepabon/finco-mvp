@@ -1,0 +1,123 @@
+╔════════════════════════════════════════════════════════════════════╗
+║                                                                    ║
+║  🎯 PASOS SIGUIENTES - FINCO                                      ║
+║                                                                    ║
+╚════════════════════════════════════════════════════════════════════╝
+
+✅ CREDENCIALES RECIBIDAS:
+   Project ID: ejvazawcioksdynhmfbo
+   URL: https://ejvazawcioksdynhmfbo.supabase.co
+   Anon Key: ✅ Recibida
+
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+
+📋 PASO 1: ACTUALIZAR .env.local (2 min)
+
+Abre el archivo .env.local y REEMPLAZA TODO con:
+
+┌────────────────────────────────────────────────────────────────┐
+│ # 🏦 FINCO - Variables de Entorno                              │
+│                                                                │
+│ # ===== SUPABASE =====                                         │
+│ NEXT_PUBLIC_SUPABASE_URL=https://ejvazawcioksdynhmfbo.supabase.co
+│ NEXT_PUBLIC_SUPABASE_ANON_KEY=eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImVqdmF6YXdjaW9rc2R5bmhtZmJvIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NTI4ODUwNjcsImV4cCI6MjA2ODQ2MTA2N30.S2bZwYUiQyIBuNyT7f_SR4H5vboE8ESP_ntZ5YY0LgM
+│ SUPABASE_SERVICE_ROLE_KEY=TU_SERVICE_ROLE_KEY_AQUI            │
+│                                                                │
+│ # ===== GOOGLE GEMINI AI =====                                 │
+│ GOOGLE_GEMINI_API_KEY=tu_gemini_api_key_aqui                  │
+└────────────────────────────────────────────────────────────────┘
+
+⚠️  FALTA: Obtener Service Role Key de Supabase
+
+   1. Ve a: https://app.supabase.com/project/ejvazawcioksdynhmfbo/settings/api
+   2. Busca: "service_role" en Project API keys
+   3. Cópiala (es un JWT largo que empieza con eyJ)
+   4. Pégala en el .env.local
+
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+
+📋 PASO 2: CREAR TABLAS EN SUPABASE (3 min)
+
+1. Ve a: https://app.supabase.com/project/ejvazawcioksdynhmfbo/sql/new
+2. Copia el contenido de: sql/create_user_profiles_table.sql
+3. Pégalo en el editor SQL
+4. Clic en RUN (▶️)
+
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+
+📋 PASO 3: CONFIGURAR OAUTH GOOGLE (10 min)
+
+3.1 GOOGLE CLOUD CONSOLE
+    https://console.cloud.google.com/apis/credentials
+
+    Crear OAuth Client ID con:
+
+    📝 Authorized JavaScript origins:
+    ┌─────────────────────────────────────────────────────────┐
+    │ http://localhost:3000                                   │
+    └─────────────────────────────────────────────────────────┘
+
+    📝 Authorized redirect URIs (agregar AMBAS):
+    ┌─────────────────────────────────────────────────────────┐
+    │ http://localhost:3000/auth/callback                     │
+    └─────────────────────────────────────────────────────────┘
+    ┌─────────────────────────────────────────────────────────┐
+    │ https://ejvazawcioksdynhmfbo.supabase.co/auth/v1/callback
+    └─────────────────────────────────────────────────────────┘
+
+    Copia el Client ID y Client Secret
+
+3.2 SUPABASE - HABILITAR GOOGLE
+    https://app.supabase.com/project/ejvazawcioksdynhmfbo/auth/providers
+
+    ✅ Activa el toggle de Google
+    ✅ Pega Client ID de Google
+    ✅ Pega Client Secret de Google
+    ✅ Save
+
+3.3 SUPABASE - CONFIGURAR URLs
+    https://app.supabase.com/project/ejvazawcioksdynhmfbo/auth/url-configuration
+
+    Site URL: http://localhost:3000
+    Redirect URLs:
+      - http://localhost:3000/auth/callback
+      - http://localhost:3000/**
+
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+
+📋 PASO 4: VERIFICAR Y REINICIAR (2 min)
+
+# Verificar configuración
+node scripts/check-env.js
+node scripts/diagnose-oauth.js
+
+# Reiniciar servidor
+Ctrl+C (detener servidor actual)
+npm run dev
+
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+
+📋 PASO 5: PROBAR (1 min)
+
+1. Ve a: http://localhost:3000/auth/login
+2. Clic en "Iniciar sesión con Google"
+3. Selecciona tu cuenta
+4. ¡Debería funcionar! 🎉
+
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+
+📖 GUÍAS CREADAS:
+
+✅ CREDENCIALES_FINCO.md        ← Guía con tus URLs específicas
+✅ SETUP_INICIAL_COMPLETO.md    ← Setup completo paso a paso
+✅ SOLUCION_RAPIDA_OAUTH.md     ← OAuth en 3 pasos
+
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+
+🚀 EMPIEZA AQUÍ:
+   
+   1. Actualiza .env.local (copia el bloque de arriba)
+   2. Obtén la Service Role Key de Supabase
+   3. Sigue los pasos 2-5
+
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━

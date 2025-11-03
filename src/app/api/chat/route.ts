@@ -9,7 +9,7 @@ import {
 
 export async function POST(request: NextRequest) {
   try {
-    const { message, chatHistory, userToken } = await request.json();
+    const { message, chatHistory = [], userToken, attachments = [] } = await request.json();
 
     if (!message || typeof message !== 'string') {
       return NextResponse.json(
@@ -60,15 +60,19 @@ export async function POST(request: NextRequest) {
     }
 
     // Determinar el número de pregunta basado en el historial
-    const questionNumber = Math.floor(chatHistory.length / 2) + 1;
+    // Contar solo los mensajes del usuario para determinar en qué pregunta estamos
+    const userMessages = chatHistory.filter((msg: any) => msg.role === 'user').length;
+    const questionNumber = userMessages + 1; // La próxima pregunta a responder
     
-    console.log('🤖 Chat API - Usuario:', user.email, 'Pregunta #:', questionNumber, 'Mensaje:', message.substring(0, 50) + '...');
+    console.log('🤖 Chat API - Usuario:', user.email, 'Pregunta #:', questionNumber, 'Historial:', chatHistory.length, 'Mensajes usuario:', userMessages, 'Mensaje:', message.substring(0, 50) + '...');
 
     // Parsear la respuesta del usuario si es una respuesta (no el mensaje inicial)
     let parsedData: Partial<ParsedOnboardingData> = {};
-    if (chatHistory.length > 0 && questionNumber <= 9) {
-      parsedData = parseOnboardingResponse(questionNumber, message);
-      logParsingResult(questionNumber, message, parsedData);
+    if (userMessages > 0 && questionNumber <= 9) {
+      // Parsear basado en la pregunta que ACABAMOS de responder
+      const currentAnswerQuestion = userMessages;
+      parsedData = parseOnboardingResponse(currentAnswerQuestion, message);
+      logParsingResult(currentAnswerQuestion, message, parsedData);
     }
 
     // Enviar mensaje a Gemini
@@ -79,23 +83,35 @@ export async function POST(request: NextRequest) {
     );
 
     if (!response.success) {
-      return NextResponse.json(
-        { error: 'Error al procesar el mensaje' },
-        { status: 500 }
-      );
+      // En lugar de devolver error 500, devolver el mensaje de error de manera elegante
+      return NextResponse.json({
+        message: response.message || 'Lo siento, hay un problema temporal. Puedes continuar escribiendo tus respuestas.',
+        debug: {
+          questionNumber,
+          onboardingCompleted: false,
+          error: response.error || 'Error de IA'
+        }
+      });
     }
 
     // Guardar/actualizar datos parseados si hay información válida
     if (Object.keys(parsedData).length > 0) {
       try {
+        const dataToUpdate: any = {
+          user_id: user.id,
+          ...parsedData,
+          updated_at: new Date().toISOString()
+        };
+
+        // Si hemos completado todas las 9 preguntas, marcar onboarding como completado
+        if (userMessages >= 8) { // 8 mensajes del usuario = 9 preguntas respondidas (incluyendo la inicial)
+          dataToUpdate.onboarding_completed = true;
+          console.log('🎉 ONBOARDING COMPLETADO - Marcando como finalizado');
+        }
+
         const { error: upsertError } = await supabase
           .from('user_profiles')
-          .upsert({
-            user_id: user.id,
-            ...parsedData,
-            // Marcar como completado si es la última pregunta
-            onboarding_completed: questionNumber >= 9
-          }, {
+          .upsert(dataToUpdate, {
             onConflict: 'user_id'
           });
 
@@ -117,7 +133,10 @@ export async function POST(request: NextRequest) {
       debug: {
         questionNumber,
         parsedData,
-        profileExists: !!profile
+        profileExists: !!profile,
+        userMessages,
+        totalMessages: chatHistory.length,
+        onboardingCompleted: userMessages >= 9
       }
     });
 

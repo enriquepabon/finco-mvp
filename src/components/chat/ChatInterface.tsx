@@ -10,8 +10,8 @@ interface ChatInterfaceProps {
   className?: string;
 }
 
-// Función para formatear mensajes de FINCO con mejor diseño
-const formatFincoMessage = (content: string) => {
+// Función para formatear mensajes de Cashbeat con mejor diseño
+const formatCashbeatMessage = (content: string) => {
   return content
     // Convertir preguntas en negrita
     .replace(/([¿?][^¿?]*[¿?])/g, '<strong class="text-blue-700 block mt-3 mb-2">$1</strong>')
@@ -50,7 +50,7 @@ export default function ChatInterface({ onComplete, className = '' }: ChatInterf
   useEffect(() => {
     const welcomeMessage: ChatMessage = {
       role: 'assistant',
-              content: '¡Hola! 👋 Soy FINCO, tu coach financiero personal. \n\nTe haré exactamente **9 preguntas básicas** para conocer tu perfil financiero y que puedas empezar a crear tu presupuesto. Será rápido y enfocado.\n\n¿Cómo te llamas?',
+              content: '¡Hola! 👋 Soy Cashbeat IA, tu coach financiero personal. \n\nTe haré exactamente **9 preguntas básicas** para conocer tu perfil financiero y que puedas empezar a crear tu presupuesto. Será rápido y enfocado.\n\n¿Cómo te llamas?',
       timestamp: new Date()
     };
     setMessages([welcomeMessage]);
@@ -200,15 +200,19 @@ export default function ChatInterface({ onComplete, className = '' }: ChatInterf
               {message.role === 'assistant' ? (
                 <div className="space-y-2">
                   <div className="flex items-center gap-2 mb-3">
-                    <div className="w-6 h-6 bg-green-100 rounded-full flex items-center justify-center">
-                      <span className="text-green-600 font-bold text-xs">F</span>
+                    <div className="w-6 h-6 bg-green-100 rounded-full flex items-center justify-center overflow-hidden">
+                      <img 
+                        src="/Logo/cashbeat (11).png" 
+                        alt="Cashbeat IA" 
+                        className="w-5 h-5 object-contain"
+                      />
                     </div>
-                    <span className="font-semibold text-green-700 text-sm">FINCO</span>
+                    <span className="font-semibold text-green-700 text-sm">Cashbeat IA</span>
                   </div>
                   <div 
                     className="text-gray-800 text-sm leading-relaxed"
                     dangerouslySetInnerHTML={{ 
-                      __html: formatFincoMessage(message.content) 
+                      __html: formatCashbeatMessage(message.content) 
                     }}
                   />
                   {message.timestamp && (

@@ -3,7 +3,8 @@
 import { useState, useEffect } from 'react';
 import { useRouter } from 'next/navigation';
 import { supabase } from '../../../lib/supabase/client';
-import ChatInterface from '../../components/chat/ChatInterface';
+import MultimodalChatInterface from '../../components/chat/MultimodalChatInterface';
+import CashbeatLogo from '../../components/ui/CashbeatLogo';
 
 export default function Onboarding() {
   const router = useRouter();
@@ -27,6 +28,22 @@ export default function Onboarding() {
       const { data: { user } } = await supabase.auth.getUser();
       if (user) {
         setUser(user);
+        
+        // Verificar si el usuario ya completó el onboarding
+        const { data: profile, error } = await supabase
+          .from('user_profiles')
+          .select('*')
+          .eq('user_id', user.id)
+          .single();
+          
+        if (profile && profile.onboarding_completed) {
+          // Si ya completó el onboarding, redirigir al dashboard
+          console.log('✅ Usuario ya completó onboarding, redirigiendo al dashboard...');
+          router.push('/dashboard');
+          return;
+        }
+        
+        console.log('🚀 Usuario nuevo o sin onboarding completo, mostrando chat...');
         setFormData(prev => ({
           ...prev,
           fullName: user.user_metadata?.full_name || user.user_metadata?.name || user.email?.split('@')[0] || ''
@@ -64,14 +81,15 @@ export default function Onboarding() {
     try {
       // Actualizar el perfil del usuario
       const { error } = await supabase
-        .from('profiles')
+        .from('user_profiles')
         .upsert({
-          id: user.id,
+          user_id: user.id,
           full_name: formData.fullName,
           monthly_income: parseFloat(formData.monthlyIncome) || null,
-          financial_goals: formData.financialGoals,
-          risk_tolerance: formData.riskTolerance,
-          onboarded: true
+          onboarding_completed: true,
+          updated_at: new Date().toISOString()
+        }, {
+          onConflict: 'user_id'
         });
 
       if (error) {
@@ -97,10 +115,13 @@ export default function Onboarding() {
     try {
       // Marcar como completado (los datos del chat ya se guardan automáticamente)
       const { error } = await supabase
-        .from('profiles')
+        .from('user_profiles')
         .upsert({
-          id: user.id,
-          onboarded: true
+          user_id: user.id,
+          onboarding_completed: true,
+          updated_at: new Date().toISOString()
+        }, {
+          onConflict: 'user_id'
         });
 
       if (error) {
@@ -308,12 +329,13 @@ export default function Onboarding() {
         <div className="max-w-2xl w-full">
           <div className="bg-white rounded-lg shadow-md p-8">
             <div className="text-center mb-8">
-              <h1 className="text-3xl font-bold text-blue-600 mb-2">🏦 FINCO</h1>
-              <h2 className="text-2xl font-bold text-gray-900 mb-4">
-                ¡Bienvenido a FINCO!
-              </h2>
+              <div className="flex justify-center items-center gap-3 mb-4">
+                <span className="text-3xl font-bold text-gray-900">¡Bienvenido a</span>
+                <CashbeatLogo variant="main" size="medium" />
+                <span className="text-3xl font-bold text-gray-900">!</span>
+              </div>
               <p className="text-gray-600">
-                Elige cómo te gustaría configurar tu perfil financiero
+                Tu coach financiero personal con inteligencia artificial
               </p>
             </div>
 
@@ -328,8 +350,8 @@ export default function Onboarding() {
                   <h3 className="text-lg font-semibold text-gray-900 mb-2">
                     Chat con IA
                   </h3>
-                  <p className="text-sm text-gray-600 mb-4">
-                    Conversa con FINCO, nuestro asistente inteligente. Él te hará preguntas personalizadas y aprenderá sobre tus metas financieras.
+                  <p className="text-sm text-gray-600 mb-6">
+                    Conversa with Cashbeat, nuestro asistente inteligente. Él te hará preguntas personalizadas y aprenderá sobre tus metas financieras.
                   </p>
                   <div className="bg-green-100 text-green-800 px-3 py-1 rounded-full text-xs font-medium">
                     ✨ Recomendado
@@ -365,22 +387,23 @@ export default function Onboarding() {
   // Modo Chat
   if (onboardingMode === 'chat') {
     return (
-      <div className="min-h-screen bg-gradient-to-br from-blue-50 to-indigo-100 flex items-center justify-center py-12 px-4">
-        <div className="max-w-4xl w-full">
-          <div className="mb-6 text-center">
-            <h1 className="text-3xl font-bold text-blue-600 mb-2">🏦 FINCO</h1>
-            <p className="text-gray-600">Conversa con tu asistente financiero personal</p>
+      <div className="min-h-screen bg-gradient-to-br from-blue-50 via-indigo-50 to-purple-50 py-8 px-4">
+        <div className="max-w-6xl mx-auto h-full">
+          <div className="mb-4 flex justify-between items-center">
             <button
               onClick={() => setOnboardingMode(null)}
-              className="mt-2 text-sm text-blue-600 hover:text-blue-800"
+              className="text-sm text-blue-600 hover:text-blue-800 flex items-center gap-1"
             >
               ← Cambiar modo
             </button>
           </div>
-          <ChatInterface 
-            onComplete={handleChatComplete}
-            className="h-[600px]"
-          />
+          <div className="h-[80vh] rounded-2xl overflow-hidden shadow-2xl">
+            <MultimodalChatInterface 
+              chatType="onboarding"
+              onComplete={handleChatComplete}
+              className="h-full"
+            />
+          </div>
         </div>
       </div>
     );
@@ -407,7 +430,10 @@ export default function Onboarding() {
         {/* Content */}
         <div className="bg-white rounded-lg shadow-md p-8">
           <div className="text-center mb-6">
-            <h1 className="text-3xl font-bold text-blue-600 mb-2">🏦 FINCO</h1>
+            <CashbeatLogo variant="main" size="medium" />
+            <h1 className="text-3xl font-bold text-blue-600 mb-2 mt-4">
+              ¡Bienvenido a
+            </h1>
             <button
               onClick={() => setOnboardingMode(null)}
               className="text-sm text-blue-600 hover:text-blue-800"

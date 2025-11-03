@@ -77,8 +77,19 @@ export async function sendMessageToGemini(
   } catch (error) {
     console.error('❌ Error al comunicarse con Gemini:', error);
     
+    // Detectar error 429 - cuota agotada
+    const errorMessage = error instanceof Error ? error.message : String(error);
+    if (errorMessage.includes('429') || errorMessage.includes('quota') || errorMessage.includes('Too Many Requests')) {
+      return {
+        message: '⏰ **Cuota de IA temporalmente agotada**\n\nPor favor:\n1. Espera unos minutos e intenta de nuevo\n2. O continúa escribiendo tus respuestas normalmente\n\n*El sistema guardará tu información correctamente.*',
+        success: false,
+        error: 'Cuota de Gemini agotada - error 429'
+      };
+    }
+    
+    // Otros errores
     return {
-      message: 'Lo siento, tengo problemas técnicos en este momento. ¿Podrías intentar de nuevo?',
+      message: 'Lo siento, tengo problemas técnicos en este momento. ¿Podrías intentar de nuevo escribiendo tu respuesta?',
       success: false,
       error: error instanceof Error ? error.message : 'Error desconocido'
     };
