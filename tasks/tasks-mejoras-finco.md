@@ -47,8 +47,8 @@
 - [ ] 1.0 **Seguridad Crítica** - Eliminar vulnerabilidades de seguridad activas y fortalecer la autenticación
   - [x] 1.1 Arreglar CORS con wildcard en next.config.ts
   - [x] 1.2 Crear variable de entorno NEXT_PUBLIC_APP_URL en .env
-  - [ ] 1.3 Configurar headers CORS específicos (Allow-Origin, Allow-Methods, Allow-Headers)
-  - [ ] 1.4 Agregar lógica condicional para dev vs prod
+  - [x] 1.3 Configurar headers CORS específicos (Allow-Origin, Allow-Methods, Allow-Headers) - Implementado en 1.1
+  - [x] 1.4 Agregar lógica condicional para dev vs prod - Implementado en 1.1
   - [ ] 1.5 Probar CORS en localhost y verificar rechazo de orígenes no autorizados
   - [ ] 1.6 Instalar @supabase/auth-helpers-nextjs para middleware
   - [ ] 1.7 Crear archivo middleware.ts en la raíz del proyecto
@@ -212,18 +212,18 @@
 
 **Estadísticas**:
 - Parent tasks completados: 0/5
-- Sub-tasks completados: 2/120 (1.7%)
+- Sub-tasks completados: 4/120 (3.3%)
 - Commits realizados: 3 (análisis + task list + CORS fix)
 
 **Desglose por Sprint**:
-- Sprint 1 (Seguridad): 2/20 sub-tasks ✅
+- Sprint 1 (Seguridad): 4/20 sub-tasks ✅
 - Sprint 2 (Performance): 0/27 sub-tasks
 - Sprint 3 (Testing): 0/28 sub-tasks
 - Sprint 4 (Calidad): 0/33 sub-tasks
 - Sprint 5 (A11y & Infra): 0/34 sub-tasks
 
-**Último sub-task completado**: 1.2 - Crear variable de entorno NEXT_PUBLIC_APP_URL ✅
-**Próximo sub-task**: 1.3 - Configurar headers CORS específicos
+**Último sub-task completado**: 1.4 - Lógica condicional dev/prod ✅
+**Próximo sub-task**: 1.5 - Probar CORS en localhost
 
 **Última actualización**: 3 de Noviembre, 2025
 
