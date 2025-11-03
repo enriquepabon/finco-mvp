@@ -46,7 +46,7 @@
 
 - [ ] 1.0 **Seguridad Crítica** - Eliminar vulnerabilidades de seguridad activas y fortalecer la autenticación
   - [x] 1.1 Arreglar CORS con wildcard en next.config.ts
-  - [ ] 1.2 Crear variable de entorno NEXT_PUBLIC_APP_URL en .env
+  - [x] 1.2 Crear variable de entorno NEXT_PUBLIC_APP_URL en .env
   - [ ] 1.3 Configurar headers CORS específicos (Allow-Origin, Allow-Methods, Allow-Headers)
   - [ ] 1.4 Agregar lógica condicional para dev vs prod
   - [ ] 1.5 Probar CORS en localhost y verificar rechazo de orígenes no autorizados
@@ -212,18 +212,18 @@
 
 **Estadísticas**:
 - Parent tasks completados: 0/5
-- Sub-tasks completados: 1/120 (0.8%)
-- Commits realizados: 2 (análisis + task list)
+- Sub-tasks completados: 2/120 (1.7%)
+- Commits realizados: 3 (análisis + task list + CORS fix)
 
 **Desglose por Sprint**:
-- Sprint 1 (Seguridad): 1/20 sub-tasks ✅
+- Sprint 1 (Seguridad): 2/20 sub-tasks ✅
 - Sprint 2 (Performance): 0/27 sub-tasks
 - Sprint 3 (Testing): 0/28 sub-tasks
 - Sprint 4 (Calidad): 0/33 sub-tasks
 - Sprint 5 (A11y & Infra): 0/34 sub-tasks
 
-**Último sub-task completado**: 1.1 - Arreglar CORS con wildcard ✅
-**Próximo sub-task**: 1.2 - Crear variable de entorno NEXT_PUBLIC_APP_URL
+**Último sub-task completado**: 1.2 - Crear variable de entorno NEXT_PUBLIC_APP_URL ✅
+**Próximo sub-task**: 1.3 - Configurar headers CORS específicos
 
 **Última actualización**: 3 de Noviembre, 2025
 
