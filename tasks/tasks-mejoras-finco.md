@@ -45,7 +45,7 @@
 ### Sprint 1: Seguridad Crítica (Semana 1-2)
 
 - [ ] 1.0 **Seguridad Crítica** - Eliminar vulnerabilidades de seguridad activas y fortalecer la autenticación
-  - [ ] 1.1 Arreglar CORS con wildcard en next.config.ts
+  - [x] 1.1 Arreglar CORS con wildcard en next.config.ts
   - [ ] 1.2 Crear variable de entorno NEXT_PUBLIC_APP_URL en .env
   - [ ] 1.3 Configurar headers CORS específicos (Allow-Origin, Allow-Methods, Allow-Headers)
   - [ ] 1.4 Agregar lógica condicional para dev vs prod
@@ -208,21 +208,22 @@
 
 ## Progress Tracking
 
-**Status**: ✅ Sub-tasks generados - Listo para implementación
+**Status**: 🚀 Implementación en progreso
 
 **Estadísticas**:
 - Parent tasks completados: 0/5
-- Sub-tasks completados: 0/120
+- Sub-tasks completados: 1/120 (0.8%)
 - Commits realizados: 2 (análisis + task list)
 
 **Desglose por Sprint**:
-- Sprint 1 (Seguridad): 0/20 sub-tasks
+- Sprint 1 (Seguridad): 1/20 sub-tasks ✅
 - Sprint 2 (Performance): 0/27 sub-tasks
 - Sprint 3 (Testing): 0/28 sub-tasks
 - Sprint 4 (Calidad): 0/33 sub-tasks
 - Sprint 5 (A11y & Infra): 0/34 sub-tasks
 
-**Próximo sub-task**: 1.1 - Arreglar CORS con wildcard en next.config.ts
+**Último sub-task completado**: 1.1 - Arreglar CORS con wildcard ✅
+**Próximo sub-task**: 1.2 - Crear variable de entorno NEXT_PUBLIC_APP_URL
 
 **Última actualización**: 3 de Noviembre, 2025
 
