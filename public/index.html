@@ -1,0 +1,272 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Conversor HTML a PDF</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+    <style>
+        body { font-family: 'Inter', sans-serif; }
+        .upload-area {
+            border: 2px dashed #d1d5db;
+            transition: all 0.3s ease;
+        }
+        .upload-area.dragover {
+            border-color: #3b82f6;
+            background-color: #eff6ff;
+        }
+        .upload-area:hover {
+            border-color: #6b7280;
+        }
+        .loading {
+            display: none;
+        }
+        .loading.active {
+            display: flex;
+        }
+        .progress-bar {
+            width: 0%;
+            transition: width 0.3s ease;
+        }
+        .option-group {
+            background: #f8fafc;
+            border-radius: 0.75rem;
+            padding: 1rem;
+            margin-bottom: 1rem;
+        }
+    </style>
+</head>
+<body class="bg-gray-50 min-h-screen">
+    <!-- Header -->
+    <header class="bg-white shadow-sm border-b">
+        <div class="max-w-4xl mx-auto px-4 py-6">
+            <h1 class="text-3xl font-bold text-gray-900">📄 Conversor HTML a PDF</h1>
+            <p class="text-gray-600 mt-2">Convierte archivos HTML a PDF con formato perfecto</p>
+        </div>
+    </header>
+
+    <!-- Main Content -->
+    <main class="max-w-4xl mx-auto px-4 py-8">
+        <!-- Tabs -->
+        <div class="mb-8">
+            <div class="border-b border-gray-200">
+                <nav class="-mb-px flex space-x-8">
+                    <button onclick="switchTab('file')" id="file-tab" class="tab-button active py-2 px-1 border-b-2 border-blue-500 font-medium text-sm text-blue-600">
+                        📁 Subir Archivo
+                    </button>
+                    <button onclick="switchTab('content')" id="content-tab" class="tab-button py-2 px-1 border-b-2 border-transparent font-medium text-sm text-gray-500 hover:text-gray-700 hover:border-gray-300">
+                        ✏️ Pegar Contenido
+                    </button>
+                    <button onclick="switchTab('test')" id="test-tab" class="tab-button py-2 px-1 border-b-2 border-transparent font-medium text-sm text-gray-500 hover:text-gray-700 hover:border-gray-300">
+                        🧪 Archivo de Prueba
+                    </button>
+                </nav>
+            </div>
+        </div>
+
+        <!-- File Upload Tab -->
+        <div id="file-panel" class="tab-panel">
+            <div class="bg-white rounded-lg shadow-lg p-6">
+                <h2 class="text-xl font-semibold mb-4">Subir Archivo HTML</h2>
+                
+                <!-- Upload Area -->
+                <div class="upload-area rounded-lg p-8 text-center mb-6" id="upload-area">
+                    <div class="flex flex-col items-center">
+                        <svg class="w-12 h-12 text-gray-400 mb-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M7 16a4 4 0 01-.88-7.903A5 5 0 1115.9 6L16 6a5 5 0 011 9.9M15 13l-3-3m0 0l-3 3m3-3v12"/>
+                        </svg>
+                        <p class="text-lg font-medium text-gray-700 mb-2">Arrastra tu archivo HTML aquí</p>
+                        <p class="text-gray-500 mb-4">o</p>
+                        <button type="button" onclick="document.getElementById('file-input').click()" class="bg-blue-600 text-white px-6 py-2 rounded-lg hover:bg-blue-700 transition-colors">
+                            Seleccionar Archivo
+                        </button>
+                        <input type="file" id="file-input" accept=".html" class="hidden">
+                        <p class="text-sm text-gray-500 mt-4">Solo archivos HTML (máximo 10MB)</p>
+                    </div>
+                </div>
+
+                <!-- Selected File Info -->
+                <div id="file-info" class="hidden bg-blue-50 border border-blue-200 rounded-lg p-4 mb-6">
+                    <div class="flex items-center">
+                        <svg class="w-5 h-5 text-blue-600 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"/>
+                        </svg>
+                        <span id="file-name" class="font-medium text-blue-900"></span>
+                        <span id="file-size" class="text-blue-600 ml-2"></span>
+                    </div>
+                </div>
+
+                <!-- Options -->
+                <div class="option-group">
+                    <h3 class="font-semibold text-gray-900 mb-3">⚙️ Opciones de Conversión</h3>
+                    <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+                        <div>
+                            <label class="block text-sm font-medium text-gray-700 mb-2">Formato de Página</label>
+                            <select id="file-format" class="w-full border border-gray-300 rounded-lg px-3 py-2 focus:ring-2 focus:ring-blue-500 focus:border-blue-500">
+                                <option value="A4">A4</option>
+                                <option value="A3">A3</option>
+                                <option value="A5">A5</option>
+                                <option value="Letter">Letter</option>
+                                <option value="Legal">Legal</option>
+                                <option value="Tabloid">Tabloid</option>
+                            </select>
+                        </div>
+                        <div>
+                            <label class="block text-sm font-medium text-gray-700 mb-2">Orientación</label>
+                            <select id="file-landscape" class="w-full border border-gray-300 rounded-lg px-3 py-2 focus:ring-2 focus:ring-blue-500 focus:border-blue-500">
+                                <option value="false">Vertical (Portrait)</option>
+                                <option value="true">Horizontal (Landscape)</option>
+                            </select>
+                        </div>
+                    </div>
+                    <div class="grid grid-cols-2 md:grid-cols-4 gap-4 mt-4">
+                        <div>
+                            <label class="block text-sm font-medium text-gray-700 mb-1">Margen Superior</label>
+                            <input type="text" id="file-margin-top" value="20px" class="w-full border border-gray-300 rounded px-3 py-1 text-sm focus:ring-2 focus:ring-blue-500 focus:border-blue-500">
+                        </div>
+                        <div>
+                            <label class="block text-sm font-medium text-gray-700 mb-1">Margen Inferior</label>
+                            <input type="text" id="file-margin-bottom" value="20px" class="w-full border border-gray-300 rounded px-3 py-1 text-sm focus:ring-2 focus:ring-blue-500 focus:border-blue-500">
+                        </div>
+                        <div>
+                            <label class="block text-sm font-medium text-gray-700 mb-1">Margen Izquierdo</label>
+                            <input type="text" id="file-margin-left" value="20px" class="w-full border border-gray-300 rounded px-3 py-1 text-sm focus:ring-2 focus:ring-blue-500 focus:border-blue-500">
+                        </div>
+                        <div>
+                            <label class="block text-sm font-medium text-gray-700 mb-1">Margen Derecho</label>
+                            <input type="text" id="file-margin-right" value="20px" class="w-full border border-gray-300 rounded px-3 py-1 text-sm focus:ring-2 focus:ring-blue-500 focus:border-blue-500">
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Convert Button -->
+                <button onclick="convertFile()" id="convert-file-btn" class="w-full bg-green-600 text-white py-3 px-6 rounded-lg font-semibold hover:bg-green-700 transition-colors disabled:bg-gray-400 disabled:cursor-not-allowed" disabled>
+                    🔄 Convertir a PDF
+                </button>
+            </div>
+        </div>
+
+        <!-- Content Tab -->
+        <div id="content-panel" class="tab-panel hidden">
+            <div class="bg-white rounded-lg shadow-lg p-6">
+                <h2 class="text-xl font-semibold mb-4">Pegar Contenido HTML</h2>
+                
+                <div class="mb-6">
+                    <label class="block text-sm font-medium text-gray-700 mb-2">Contenido HTML</label>
+                    <textarea id="html-content" rows="12" class="w-full border border-gray-300 rounded-lg px-3 py-2 font-mono text-sm focus:ring-2 focus:ring-blue-500 focus:border-blue-500" placeholder="Pega tu código HTML aquí..."></textarea>
+                    <p class="text-sm text-gray-500 mt-2">Pega el contenido HTML completo incluyendo las etiquetas &lt;html&gt;, &lt;head&gt; y &lt;body&gt;</p>
+                </div>
+
+                <!-- Options -->
+                <div class="option-group">
+                    <h3 class="font-semibold text-gray-900 mb-3">⚙️ Opciones de Conversión</h3>
+                    <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+                        <div>
+                            <label class="block text-sm font-medium text-gray-700 mb-2">Formato de Página</label>
+                            <select id="content-format" class="w-full border border-gray-300 rounded-lg px-3 py-2 focus:ring-2 focus:ring-blue-500 focus:border-blue-500">
+                                <option value="A4">A4</option>
+                                <option value="A3">A3</option>
+                                <option value="A5">A5</option>
+                                <option value="Letter">Letter</option>
+                                <option value="Legal">Legal</option>
+                                <option value="Tabloid">Tabloid</option>
+                            </select>
+                        </div>
+                        <div>
+                            <label class="block text-sm font-medium text-gray-700 mb-2">Orientación</label>
+                            <select id="content-landscape" class="w-full border border-gray-300 rounded-lg px-3 py-2 focus:ring-2 focus:ring-blue-500 focus:border-blue-500">
+                                <option value="false">Vertical (Portrait)</option>
+                                <option value="true">Horizontal (Landscape)</option>
+                            </select>
+                        </div>
+                    </div>
+                    <div class="grid grid-cols-2 md:grid-cols-4 gap-4 mt-4">
+                        <div>
+                            <label class="block text-sm font-medium text-gray-700 mb-1">Margen Superior</label>
+                            <input type="text" id="content-margin-top" value="20px" class="w-full border border-gray-300 rounded px-3 py-1 text-sm focus:ring-2 focus:ring-blue-500 focus:border-blue-500">
+                        </div>
+                        <div>
+                            <label class="block text-sm font-medium text-gray-700 mb-1">Margen Inferior</label>
+                            <input type="text" id="content-margin-bottom" value="20px" class="w-full border border-gray-300 rounded px-3 py-1 text-sm focus:ring-2 focus:ring-blue-500 focus:border-blue-500">
+                        </div>
+                        <div>
+                            <label class="block text-sm font-medium text-gray-700 mb-1">Margen Izquierdo</label>
+                            <input type="text" id="content-margin-left" value="20px" class="w-full border border-gray-300 rounded px-3 py-1 text-sm focus:ring-2 focus:ring-blue-500 focus:border-blue-500">
+                        </div>
+                        <div>
+                            <label class="block text-sm font-medium text-gray-700 mb-1">Margen Derecho</label>
+                            <input type="text" id="content-margin-right" value="20px" class="w-full border border-gray-300 rounded px-3 py-1 text-sm focus:ring-2 focus:ring-blue-500 focus:border-blue-500">
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Convert Button -->
+                <button onclick="convertContent()" id="convert-content-btn" class="w-full bg-green-600 text-white py-3 px-6 rounded-lg font-semibold hover:bg-green-700 transition-colors">
+                    🔄 Convertir a PDF
+                </button>
+            </div>
+        </div>
+
+        <!-- Test Tab -->
+        <div id="test-panel" class="tab-panel hidden">
+            <div class="bg-white rounded-lg shadow-lg p-6">
+                <h2 class="text-xl font-semibold mb-4">🧪 Archivo de Prueba</h2>
+                
+                <div class="bg-blue-50 border border-blue-200 rounded-lg p-4 mb-6">
+                    <div class="flex items-start">
+                        <svg class="w-5 h-5 text-blue-600 mt-0.5 mr-3 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"/>
+                        </svg>
+                        <div>
+                            <h3 class="font-semibold text-blue-900 mb-2">Archivo de Demostración</h3>
+                            <p class="text-blue-800">Este es el archivo HTML_prueba.html que compartiste. Es una infografía compleja con:</p>
+                            <ul class="list-disc list-inside text-blue-800 mt-2 space-y-1">
+                                <li>Gráficos interactivos con Chart.js</li>
+                                <li>Estilos de Tailwind CSS</li>
+                                <li>Fuentes de Google Fonts (Inter)</li>
+                                <li>Diseño responsivo y moderno</li>
+                            </ul>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="bg-gray-50 rounded-lg p-4 mb-6">
+                    <h3 class="font-semibold text-gray-900 mb-2">📊 Contenido del archivo:</h3>
+                    <p class="text-gray-700 text-sm">
+                        <strong>Título:</strong> Project Status: Agri-Machinery Market Research<br>
+                        <strong>Tema:</strong> Infografía sobre investigación de mercado agrícola<br>
+                        <strong>Elementos:</strong> Gráficos de barras, gráficos de dona, estadísticas, tarjetas informativas<br>
+                        <strong>Tamaño:</strong> Aproximadamente 220 líneas de código HTML
+                    </p>
+                </div>
+
+                <!-- Convert Button -->
+                <button onclick="convertTest()" id="convert-test-btn" class="w-full bg-purple-600 text-white py-3 px-6 rounded-lg font-semibold hover:bg-purple-700 transition-colors">
+                    🚀 Convertir Archivo de Prueba
+                </button>
+            </div>
+        </div>
+
+        <!-- Loading Overlay -->
+        <div id="loading" class="loading fixed inset-0 bg-black bg-opacity-50 items-center justify-center z-50">
+            <div class="bg-white rounded-lg p-8 max-w-md mx-4">
+                <div class="text-center">
+                    <div class="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-600 mx-auto mb-4"></div>
+                    <h3 class="text-lg font-semibold text-gray-900 mb-2">Convirtiendo a PDF...</h3>
+                    <p class="text-gray-600 mb-4">Por favor espera mientras procesamos tu archivo</p>
+                    <div class="w-full bg-gray-200 rounded-full h-2">
+                        <div class="progress-bar bg-blue-600 h-2 rounded-full"></div>
+                    </div>
+                    <p id="loading-status" class="text-sm text-gray-500 mt-2">Iniciando conversión...</p>
+                </div>
+            </div>
+        </div>
+
+        <!-- Success/Error Messages -->
+        <div id="message" class="hidden fixed top-4 right-4 max-w-md z-50"></div>
+    </main>
+
+    <script src="script.js"></script>
+</body>
+</html>
