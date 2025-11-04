@@ -216,9 +216,9 @@ export default function DynamicFormComponentFixed({ questionType, onSubmit, isLo
                     onChange={(e) => updateEntry(entry.id, 'subcategory', e.target.value)}
                     className="w-full px-3 py-2 text-sm text-gray-900 font-medium border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent bg-white placeholder:text-gray-400"
                   />
-                  {entry.category && formData.subcategories[entry.category] && (
+                  {entry.category && formData.subcategories[entry.category as keyof typeof formData.subcategories] && (
                     <datalist id={`subcategories-${entry.category}`}>
-                      {formData.subcategories[entry.category].map(subcat => (
+                      {formData.subcategories[entry.category as keyof typeof formData.subcategories].map((subcat: string) => (
                         <option key={subcat} value={subcat} />
                       ))}
                     </datalist>

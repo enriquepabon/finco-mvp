@@ -4,16 +4,64 @@ import { useState, useRef, useEffect } from 'react';
 import { Mic, MicOff, Square, Send, Volume2, VolumeX } from 'lucide-react';
 import { motion, AnimatePresence } from 'framer-motion';
 
+// Web Speech API type definitions
+interface SpeechRecognitionAlternative {
+  transcript: string;
+  confidence: number;
+}
+
+interface SpeechRecognitionResult {
+  [index: number]: SpeechRecognitionAlternative;
+  isFinal: boolean;
+  length: number;
+}
+
+interface SpeechRecognitionResultList {
+  [index: number]: SpeechRecognitionResult;
+  length: number;
+}
+
+interface SpeechRecognitionEvent extends Event {
+  resultIndex: number;
+  results: SpeechRecognitionResultList;
+}
+
+interface SpeechRecognitionErrorEvent extends Event {
+  error: string;
+  message: string;
+}
+
+interface SpeechRecognition extends EventTarget {
+  continuous: boolean;
+  interimResults: boolean;
+  lang: string;
+  maxAlternatives: number;
+  onstart: (() => void) | null;
+  onresult: ((event: SpeechRecognitionEvent) => void) | null;
+  onerror: ((event: SpeechRecognitionErrorEvent) => void) | null;
+  onend: (() => void) | null;
+  start(): void;
+  stop(): void;
+  abort(): void;
+}
+
+type SpeechRecognitionConstructor = new () => SpeechRecognition;
+
+interface WindowWithSpeechRecognition {
+  SpeechRecognition?: SpeechRecognitionConstructor;
+  webkitSpeechRecognition?: SpeechRecognitionConstructor;
+}
+
 interface VoiceRecorderProps {
   onTranscriptionComplete: (transcription: string) => void;
   onAudioRecorded: (audioBlob: Blob) => void;
   disabled?: boolean;
 }
 
-export default function VoiceRecorder({ 
-  onTranscriptionComplete, 
-  onAudioRecorded, 
-  disabled = false 
+export default function VoiceRecorder({
+  onTranscriptionComplete,
+  onAudioRecorded,
+  disabled = false
 }: VoiceRecorderProps) {
   const [isRecording, setIsRecording] = useState(false);
   const [isTranscribing, setIsTranscribing] = useState(false);
@@ -24,7 +72,7 @@ export default function VoiceRecorder({
   const [isPlaying, setIsPlaying] = useState(false);
   const [recordingTime, setRecordingTime] = useState(0);
   const [isListening, setIsListening] = useState(false);
-  const recognitionRef = useRef<any>(null);
+  const recognitionRef = useRef<SpeechRecognition | null>(null);
 
   const mediaRecorderRef = useRef<MediaRecorder | null>(null);
   const audioChunksRef = useRef<Blob[]>([]);
@@ -159,7 +207,7 @@ export default function VoiceRecorder({
   const transcribeWithWebSpeechAPI = (): Promise<void> => {
     return new Promise((resolve, reject) => {
       // Verificar si la API está disponible
-      const SpeechRecognition = (window as any).SpeechRecognition || (window as any).webkitSpeechRecognition;
+      const SpeechRecognition = (window as WindowWithSpeechRecognition).SpeechRecognition || (window as WindowWithSpeechRecognition).webkitSpeechRecognition;
       
       if (!SpeechRecognition) {
         const placeholderText = "Transcripción automática no disponible";
@@ -180,7 +228,7 @@ export default function VoiceRecorder({
         console.log('🎙️ Iniciando transcripción...');
       };
 
-      recognition.onresult = (event: any) => {
+      recognition.onresult = (event: SpeechRecognitionEvent) => {
         const transcript = event.results[0][0].transcript;
         console.log('🎤 Transcripción obtenida:', transcript);
         setTranscription(transcript);
@@ -188,7 +236,7 @@ export default function VoiceRecorder({
         resolve();
       };
 
-      recognition.onerror = (event: any) => {
+      recognition.onerror = (event: SpeechRecognitionErrorEvent) => {
         console.error('❌ Error en Web Speech API:', event.error);
         const errorText = `Error de transcripción: ${event.error}`;
         setTranscription(errorText);
@@ -236,16 +284,16 @@ export default function VoiceRecorder({
 
   const startTranscription = () => {
     // Verificar si la API está disponible
-    const SpeechRecognition = (window as any).SpeechRecognition || (window as any).webkitSpeechRecognition;
-    
+    const SpeechRecognition = (window as WindowWithSpeechRecognition).SpeechRecognition || (window as WindowWithSpeechRecognition).webkitSpeechRecognition;
+
     if (!SpeechRecognition) {
       console.warn('⚠️ Web Speech API no disponible');
       setTranscription('Transcripción automática no disponible');
       return;
     }
 
-    recognitionRef.current = new SpeechRecognition();
-    const recognition = recognitionRef.current;
+    const recognition = new SpeechRecognition();
+    recognitionRef.current = recognition;
 
     recognition.continuous = true;
     recognition.interimResults = true;
@@ -258,7 +306,7 @@ export default function VoiceRecorder({
       setIsTranscribing(true);
     };
 
-    recognition.onresult = (event: any) => {
+    recognition.onresult = (event: SpeechRecognitionEvent) => {
       let finalTranscript = '';
       let interimTranscript = '';
 
@@ -278,7 +326,7 @@ export default function VoiceRecorder({
       }
     };
 
-    recognition.onerror = (event: any) => {
+    recognition.onerror = (event: SpeechRecognitionErrorEvent) => {
       console.error('❌ Error en transcripción:', event.error);
       if (event.error === 'no-speech') {
         setTranscription('No se detectó voz...');
