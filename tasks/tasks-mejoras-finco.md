@@ -143,10 +143,10 @@
   - [x] 4.12 Crear src/types/onboarding.ts con interface OnboardingData completa (142 líneas, 9 interfaces)
   - [x] 4.13 Crear src/types/budget.ts con interfaces Budget, BudgetCategory, Transaction (258 líneas, 16 interfaces)
   - [x] 4.14 Identificar todos los ': any' en el proyecto (usar grep) - 43 instancias encontradas en 21 archivos
-  - [ ] 4.15 Reemplazar 'any' con tipos específicos en API routes
-  - [ ] 4.16 Reemplazar 'any' con tipos específicos en componentes
-  - [ ] 4.17 Reemplazar 'any' con tipos específicos en lib/parsers
-  - [ ] 4.18 Ejecutar npm run type-check y resolver todos los errores
+  - [x] 4.15 Reemplazar 'any' con tipos específicos en API routes (19 instancias en 4 archivos)
+  - [x] 4.16 Reemplazar 'any' con tipos específicos en componentes (8 instancias en 2 archivos)
+  - [ ] 4.17 Reemplazar 'any' con tipos específicos en lib/parsers (16 instancias restantes)
+  - [ ] 4.18 Ejecutar npm run type-check y resolver todos los errores (progreso: 27/43 = 63%)
   - [ ] 4.19 Verificar que IDE muestre autocomplete mejorado
   - [ ] 4.20 Crear src/components/chat/BaseChatInterface.tsx con props genéricas
   - [ ] 4.21 Extraer lógica compartida: useState para messages, loading, error
@@ -205,26 +205,26 @@
 
 ## Progress Tracking
 
-**Status**: 🚀 Sprint 4 en progreso - Type Safety System Implementado
+**Status**: 🚀 Sprint 4 en progreso - Type Safety 63% Complete
 
 **Estadísticas**:
 - Parent tasks completados: 3/5 ✅✅✅ (Sprint 1, 2 & 3)
-- Sub-tasks completados: 83/142 (58.5%)
-- Commits realizados: 13 (seguridad + performance + testing + CI/CD + logging + types)
+- Sub-tasks completados: 85/142 (59.9%)
+- Commits realizados: 15 (seguridad + performance + testing + CI/CD + logging + types)
 - Tests escritos: 101 tests (100% passing) ✅
 - CI/CD Pipeline: ✅ Configurado
 - Logging System: ✅ Implementado (21 statements migrados)
-- Type System: ✅ 3 archivos creados (506 líneas, 35 interfaces)
+- Type System: ✅ 3 archivos creados (506 líneas, 35 interfaces) + 27/43 'any' eliminados
 
 **Desglose por Sprint**:
 - Sprint 1 (Seguridad): 20/20 sub-tasks ✅✅✅ (100% COMPLETADO!)
 - Sprint 2 (Performance): 26/27 sub-tasks ✅✅✅ (96% COMPLETADO! - 2.27 requiere deploy)
 - Sprint 3 (Testing & CI/CD): 25/28 sub-tasks ✅✅✅ (89% COMPLETADO! - API tests skipped)
-- Sprint 4 (Calidad): 12/33 sub-tasks ✅✅ (36% - Logging + Type Safety foundation complete)
+- Sprint 4 (Calidad): 14/33 sub-tasks ✅✅ (42% - Logging + Type Safety 63%)
 - Sprint 5 (A11y & Infra): 0/34 sub-tasks ⏳
 
-**Último sub-task completado**: 4.14 - Identificación de 43 instancias de 'any' ✅
-**Próximo sub-task**: 4.15 - Reemplazar 'any' con tipos específicos en API routes
+**Último sub-task completado**: 4.16 - Tipos 'any' reemplazados en componentes (8 instancias) ✅
+**Próximo sub-task**: 4.17 - Reemplazar 'any' restantes en lib/parsers (16 instancias)
 
 **Test Coverage**:
 - onboarding-parser.ts: 98.43% statements, 89.61% branches, 87.5% functions
