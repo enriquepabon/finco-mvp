@@ -1,10 +1,11 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { sendOnboardingMessage, ChatMessage } from '../../../../lib/gemini/client';
 import { createClient } from '@supabase/supabase-js';
-import { 
-  parseOnboardingResponse, 
-  logParsingResult, 
-  ParsedOnboardingData 
+import { env } from '../../../../lib/env';
+import {
+  parseOnboardingResponse,
+  logParsingResult,
+  ParsedOnboardingData
 } from '../../../../lib/parsers/onboarding-parser';
 
 export async function POST(request: NextRequest) {
@@ -21,8 +22,8 @@ export async function POST(request: NextRequest) {
     // Auth is now handled by middleware.ts
     // Create Supabase client (middleware ensures user is authenticated)
     const supabase = createClient(
-      process.env.NEXT_PUBLIC_SUPABASE_URL!,
-      process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!
+      env.NEXT_PUBLIC_SUPABASE_URL,
+      env.NEXT_PUBLIC_SUPABASE_ANON_KEY
     );
 
     // Get authenticated user (guaranteed by middleware)

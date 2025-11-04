@@ -1,14 +1,8 @@
 import { GoogleGenerativeAI } from '@google/generative-ai';
+import { env } from '../env';
 
-// Verificar que la API key esté configurada
-const apiKey = process.env.GOOGLE_GEMINI_API_KEY;
-
-if (!apiKey) {
-  throw new Error('GOOGLE_GEMINI_API_KEY no está configurada en las variables de entorno');
-}
-
-// Inicializar cliente de Google Gemini
-const genAI = new GoogleGenerativeAI(apiKey);
+// Inicializar cliente de Google Gemini con env validado
+const genAI = new GoogleGenerativeAI(env.GOOGLE_GEMINI_API_KEY);
 
 // Configuración del modelo
 const model = genAI.getGenerativeModel({ 

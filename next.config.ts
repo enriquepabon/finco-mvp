@@ -1,15 +1,16 @@
 import type { NextConfig } from "next";
+import { env } from './lib/env';
 
 const nextConfig: NextConfig = {
   // Headers CORS configurados por entorno
   async headers() {
-    const isDevelopment = process.env.NODE_ENV === 'development';
+    const isDevelopment = env.NODE_ENV === 'development';
 
     // En desarrollo: permitir localhost y variaciones
     // En producción: solo el dominio específico de la app
     const allowedOrigin = isDevelopment
       ? '*' // Más flexible en desarrollo local
-      : process.env.NEXT_PUBLIC_APP_URL || 'https://finco-mvp.vercel.app';
+      : env.NEXT_PUBLIC_APP_URL;
 
     return [
       {

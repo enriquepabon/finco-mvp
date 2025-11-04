@@ -56,10 +56,10 @@
   - [x] 1.9 Configurar matcher para proteger /api/* y /dashboard/*
   - [x] 1.10 Remover código duplicado de validación de auth en API routes (~10 archivos)
   - [x] 1.11 Probar con usuario autenticado y no autenticado - Middleware compila y funciona correctamente
-  - [ ] 1.12 Instalar zod para validación de esquemas
-  - [ ] 1.13 Crear lib/env.ts con schema de validación de todas las env vars
-  - [ ] 1.14 Reemplazar todas las referencias process.env.X! con importaciones de env.X
-  - [ ] 1.15 Crear archivo .env.example con todas las variables requeridas
+  - [x] 1.12 Instalar zod para validación de esquemas
+  - [x] 1.13 Crear lib/env.ts con schema de validación de todas las env vars
+  - [x] 1.14 Reemplazar todas las referencias process.env.X! con importaciones de env.X
+  - [x] 1.15 Crear archivo .env.example con todas las variables requeridas
   - [ ] 1.16 Actualizar README.md con instrucciones de configuración de env vars
   - [ ] 1.17 Identificar todos los campos 'debug' en API route responses
   - [ ] 1.18 Agregar condicional NODE_ENV === 'development' para campos debug
@@ -212,18 +212,18 @@
 
 **Estadísticas**:
 - Parent tasks completados: 0/5
-- Sub-tasks completados: 11/120 (9.2%)
-- Commits realizados: 6 (análisis + CORS + middleware + cleanup)
+- Sub-tasks completados: 15/120 (12.5%)
+- Commits realizados: 7 (análisis + CORS + middleware + env validation)
 
 **Desglose por Sprint**:
-- Sprint 1 (Seguridad): 11/20 sub-tasks ✅ (55% completado)
+- Sprint 1 (Seguridad): 15/20 sub-tasks ✅ (75% completado - CASI TERMINADO!)
 - Sprint 2 (Performance): 0/27 sub-tasks
 - Sprint 3 (Testing): 0/28 sub-tasks
 - Sprint 4 (Calidad): 0/33 sub-tasks
 - Sprint 5 (A11y & Infra): 0/34 sub-tasks
 
-**Último sub-task completado**: 1.11 - Probar middleware ✅
-**Próximo sub-task**: 1.12 - Instalar zod para validación
+**Último sub-task completado**: 1.15 - Crear .env.example ✅
+**Próximo sub-task**: 1.16 - Actualizar README con env vars
 
 **Última actualización**: 3 de Noviembre, 2025
 

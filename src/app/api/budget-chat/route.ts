@@ -8,6 +8,7 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { supabaseAdmin } from '../../../../lib/supabase/server';
 import { createClient } from '@supabase/supabase-js';
+import { env } from '../../../../lib/env';
 import { parseStructuredData, validateStructuredData, ParsedBudgetData } from '../../../../lib/parsers/structured-parser';
 import { analyzeBudgetData, generateFinalBudgetAnalysis, BudgetAnalysisData, AnalysisContext } from '../../../../lib/gemini/budget-analysis-client';
 
@@ -220,8 +221,8 @@ export async function POST(request: NextRequest) {
     // Auth is now handled by middleware.ts
     // Create Supabase client (middleware ensures user is authenticated)
     const supabase = createClient(
-      process.env.NEXT_PUBLIC_SUPABASE_URL!,
-      process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!
+      env.NEXT_PUBLIC_SUPABASE_URL,
+      env.NEXT_PUBLIC_SUPABASE_ANON_KEY
     );
 
     // Get authenticated user (guaranteed by middleware)
