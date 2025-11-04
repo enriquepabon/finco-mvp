@@ -15,10 +15,12 @@ import {
   createRateLimitError,
 } from '../../../../lib/rate-limit';
 import { logger } from '../../../../lib/logger';
+import { ChatHistory, ChatRequest } from '../../../types/chat';
+import { OnboardingData } from '../../../types/onboarding';
 
 export async function POST(request: NextRequest) {
   try {
-    const { message, chatHistory = [], attachments = [] } = await request.json();
+    const { message, chatHistory = [], attachments = [] } = await request.json() as ChatRequest;
 
     if (!message || typeof message !== 'string') {
       return NextResponse.json(
@@ -65,7 +67,7 @@ export async function POST(request: NextRequest) {
       .from('user_profiles')
       .select('*')
       .eq('user_id', user.id)
-      .single();
+      .single() as { data: OnboardingData | null; error: any };
 
     if (profileError && profileError.code !== 'PGRST116') {
       console.error('Error obteniendo perfil:', profileError);
@@ -74,7 +76,7 @@ export async function POST(request: NextRequest) {
 
     // Determinar el número de pregunta basado en el historial
     // Contar solo los mensajes del usuario para determinar en qué pregunta estamos
-    const userMessages = chatHistory.filter((msg: any) => msg.role === 'user').length;
+    const userMessages = chatHistory.filter((msg) => msg.role === 'user').length;
     const questionNumber = userMessages + 1; // La próxima pregunta a responder
     
     console.log('🤖 Chat API - Usuario:', user.email, 'Pregunta #:', questionNumber, 'Historial:', chatHistory.length, 'Mensajes usuario:', userMessages, 'Mensaje:', message.substring(0, 50) + '...');
@@ -140,7 +142,7 @@ export async function POST(request: NextRequest) {
     // Guardar/actualizar datos parseados si hay información válida
     if (Object.keys(parsedData).length > 0) {
       try {
-        const dataToUpdate: any = {
+        const dataToUpdate: Partial<OnboardingData> & { user_id: string } = {
           user_id: user.id,
           ...parsedData,
           updated_at: new Date().toISOString()

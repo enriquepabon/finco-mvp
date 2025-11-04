@@ -11,15 +11,12 @@ import {
   createRateLimitHeaders,
   createRateLimitError,
 } from '../../../../lib/rate-limit';
-
-interface ChatMessage {
-  role: 'user' | 'assistant';
-  content: string;
-}
+import { ChatMessage, ChatHistory, ChatRequest } from '../../../types/chat';
+import { OnboardingData } from '../../../types/onboarding';
 
 export async function POST(request: NextRequest) {
   try {
-    const { message, chatHistory = [] } = await request.json();
+    const { message, chatHistory = [] } = await request.json() as ChatRequest;
 
     if (!message || typeof message !== 'string') {
       return NextResponse.json(
@@ -70,7 +67,7 @@ export async function POST(request: NextRequest) {
       .from('user_profiles')
       .select('*')
       .eq('user_id', user.id)
-      .single();
+      .single() as { data: OnboardingData | null; error: any };
 
     if (profileError) {
       console.error('❌ Error obteniendo perfil:', profileError);
@@ -81,19 +78,19 @@ export async function POST(request: NextRequest) {
     }
 
     // Usar prompt especializado con perfil actual
-    const specializedPrompt = getProfileEditPrompt(message, { 
-      full_name: user.user_metadata?.full_name, 
-      email: user.email 
+    const specializedPrompt = getProfileEditPrompt(message, {
+      full_name: user.user_metadata?.full_name,
+      email: user.email
     }, currentProfile);
 
     let responseMessage = '';
     let profileUpdated = false;
-    let updatedProfile = null;
+    let updatedProfile: OnboardingData | null = null;
 
     // Try to get cached response first (if caching is enabled)
     const cacheContext = {
       userId: user.id,
-      profileVersion: currentProfile.updated_at || currentProfile.created_at,
+      profileVersion: currentProfile?.updated_at || currentProfile?.created_at || new Date().toISOString(),
     };
 
     let cachedAIMessage: string | null = null;
@@ -114,10 +111,12 @@ export async function POST(request: NextRequest) {
         };
       } else {
         // Call Gemini AI
+        // Filter out system messages as sendOnboardingMessage only accepts 'user' | 'assistant'
+        const filteredHistory = chatHistory.filter(msg => msg.role !== 'system') as Array<{role: 'user' | 'assistant'; content: string}>;
         aiResponse = await sendOnboardingMessage(
           specializedPrompt,
           { full_name: user.user_metadata?.full_name, email: user.email },
-          chatHistory as ChatMessage[]
+          filteredHistory
         );
 
         // Cache the successful response

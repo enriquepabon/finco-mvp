@@ -7,10 +7,11 @@
 
 import { NextRequest, NextResponse } from 'next/server';
 import { supabaseAdmin } from '../../../../lib/supabase/server';
-import { createClient } from '@supabase/supabase-js';
+import { createClient, SupabaseClient } from '@supabase/supabase-js';
 import { env } from '../../../../lib/env';
 import { parseStructuredData, validateStructuredData, ParsedBudgetData } from '../../../../lib/parsers/structured-parser';
 import { analyzeBudgetData, generateFinalBudgetAnalysis, BudgetAnalysisData, AnalysisContext } from '../../../../lib/gemini/budget-analysis-client';
+import { BudgetCategory, CategoryType } from '../../../types/budget';
 
 // Interfaz para la request
 interface BudgetChatRequest {
@@ -41,7 +42,7 @@ function getTitleForType(type: string): string {
 }
 
 // Obtener o crear presupuesto para el período especificado
-async function getOrCreateBudget(supabase: any, userId: string, period: { month: number; year: number }) {
+async function getOrCreateBudget(supabase: SupabaseClient, userId: string, period: { month: number; year: number }) {
   console.log(`📅 Obteniendo/creando presupuesto para ${period.month}/${period.year}`);
   
   // Buscar presupuesto existente
@@ -87,7 +88,7 @@ async function getOrCreateBudget(supabase: any, userId: string, period: { month:
 }
 
 // Guardar categorías y subcategorías creadas (con upsert para evitar duplicados)
-async function saveBudgetCategories(supabase: any, budgetId: string, userId: string, parsedData: ParsedBudgetData) {
+async function saveBudgetCategories(supabase: SupabaseClient, budgetId: string, userId: string, parsedData: ParsedBudgetData) {
   console.log('📝 Datos parseados recibidos:', JSON.stringify(parsedData, null, 2));
   
   const { categories, subcategories } = parsedData;
@@ -256,15 +257,15 @@ export async function POST(request: NextRequest) {
         
         const parsedData = parseStructuredData(structuredData);
         console.log('✅ Categorías y subcategorías estructuradas creadas:', parsedData);
-        
+
         // Calcular total
-        const totalAmount = parsedData.categories.reduce((sum: number, cat: any) => sum + cat.amount, 0);
+        const totalAmount = parsedData.categories.reduce((sum: number, cat: BudgetCategory) => sum + (cat.amount || 0), 0);
         
         // Preparar datos para análisis
         const analysisData: BudgetAnalysisData = {
-          type: structuredData.type as any,
+          type: structuredData.type as CategoryType,
           title: getTitleForType(structuredData.type),
-          entries: structuredData.entries.map((entry: any) => ({
+          entries: structuredData.entries.map((entry: { category: string; subcategory?: string; amount: number }) => ({
             category: entry.category,
             subcategory: entry.subcategory || undefined,
             amount: entry.amount

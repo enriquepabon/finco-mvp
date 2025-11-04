@@ -6,14 +6,23 @@
 // ============================================================================
 
 import { GoogleGenerativeAI } from '@google/generative-ai';
+import { ChatHistory } from '../../src/types/chat';
+import { OnboardingData } from '../../src/types/onboarding';
+
+// Interfaz para pregunta de presupuesto
+interface BudgetQuestion {
+  question: string;
+  context: string;
+  expectedData: string;
+}
 
 // Interfaz para el mensaje de presupuesto
 interface BudgetMessageRequest {
   message: string;
   questionNumber: number;
-  parsedData?: any;
-  chatHistory?: any[];
-  userProfile?: any;
+  parsedData?: Record<string, unknown>;
+  chatHistory?: ChatHistory;
+  userProfile?: Partial<OnboardingData>;
 }
 
 // Configuración del cliente Gemini
@@ -137,7 +146,7 @@ export async function sendBudgetMessage(request: BudgetMessageRequest): Promise<
 }
 
 // Construir contexto de la conversación
-function buildConversationContext(chatHistory: any[], userProfile: any): string {
+function buildConversationContext(chatHistory: ChatHistory = [], userProfile?: Partial<OnboardingData>): string {
   let context = "";
   
   // Agregar información del perfil si existe
@@ -155,9 +164,10 @@ function buildConversationContext(chatHistory: any[], userProfile: any): string 
   if (chatHistory.length > 0) {
     context += "\n\nHISTORIAL RECIENTE:";
     chatHistory.forEach((entry, index) => {
-      context += `\nPregunta ${entry.question_number}: ${entry.user_message}`;
-      if (entry.parsed_data && Object.keys(entry.parsed_data).length > 0) {
-        context += ` (Datos: ${JSON.stringify(entry.parsed_data)})`;
+      const role = entry.role === 'user' ? 'Usuario' : 'Asistente';
+      context += `\n${role}: ${entry.content}`;
+      if (entry.metadata) {
+        context += ` (Metadata: ${JSON.stringify(entry.metadata)})`;
       }
     });
   }
@@ -169,10 +179,10 @@ function buildConversationContext(chatHistory: any[], userProfile: any): string 
 function buildBudgetPrompt(params: {
   message: string;
   questionNumber: number;
-  currentQuestion: any;
-  parsedData: any;
+  currentQuestion?: BudgetQuestion;
+  parsedData?: Record<string, unknown>;
   conversationContext: string;
-  userProfile: any;
+  userProfile?: Partial<OnboardingData>;
 }): string {
   const { message, questionNumber, currentQuestion, parsedData, conversationContext, userProfile } = params;
   
@@ -185,9 +195,10 @@ function buildBudgetPrompt(params: {
   
   // Agregar información de la pregunta actual
   if (currentQuestion) {
-    prompt += `\n\nPREGUNTA ACTUAL (${questionNumber}/10):
-Concepto: ${currentQuestion.concept}
-Explicación: ${currentQuestion.explanation}`;
+    prompt += `\n\nPREGUNTA ACTUAL (${questionNumber}/4):
+Contexto: ${currentQuestion.context}
+Pregunta: ${currentQuestion.question}
+Datos esperados: ${currentQuestion.expectedData}`;
   }
   
   // Agregar datos parseados si existen
