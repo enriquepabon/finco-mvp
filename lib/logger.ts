@@ -59,7 +59,7 @@ const EMOJIS = {
 interface LogContext {
   userId?: string;
   operation?: string;
-  [key: string]: any;
+  [key: string]: unknown;
 }
 
 interface LogEntry {

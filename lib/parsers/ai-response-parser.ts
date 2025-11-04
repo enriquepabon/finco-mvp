@@ -53,7 +53,7 @@ export const FIELD_MAPPING: Record<string, string> = {
 };
 
 // Función para convertir valores de texto a tipos apropiados
-export function convertValueToType(field: string, value: string): any {
+export function convertValueToType(field: string, value: string): string | number | null {
   if (!value || value === 'No especificado' || value === 'No especificada') {
     return null;
   }

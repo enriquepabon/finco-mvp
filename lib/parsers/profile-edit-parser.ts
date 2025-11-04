@@ -1,7 +1,7 @@
 // Parser especializado para edición de perfil financiero
 export interface ProfileEditResult {
   field?: string;
-  value?: any;
+  value?: string | number | boolean;
   originalText: string;
   confidence: 'high' | 'medium' | 'low';
 }
@@ -88,7 +88,7 @@ export function parseProfileEditMessage(message: string): ProfileEditResult {
     for (const pattern of fieldPatterns) {
       const match = lowerMessage.match(pattern);
       if (match && match[1]) {
-        let value: any = match[1].trim();
+        let value: string | number | boolean = match[1].trim();
         let confidence: 'high' | 'medium' | 'low' = 'high';
         
         // Procesar según el tipo de campo

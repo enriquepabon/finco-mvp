@@ -1,5 +1,6 @@
 import { GoogleGenerativeAI } from '@google/generative-ai';
 import { env } from '../env';
+import { OnboardingData } from '../../src/types/onboarding';
 
 // Inicializar cliente de Google Gemini con env validado
 const genAI = new GoogleGenerativeAI(env.GOOGLE_GEMINI_API_KEY);
@@ -95,7 +96,7 @@ export async function sendMessageToGemini(
  */
 export async function sendOnboardingMessage(
   message: string,
-  userProfile: any,
+  userProfile: Partial<OnboardingData> | { full_name?: string; email?: string },
   chatHistory?: ChatMessage[]
 ): Promise<ChatResponse> {
   const onboardingContext = `

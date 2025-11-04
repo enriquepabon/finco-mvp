@@ -1,5 +1,7 @@
 // Prompts especializados para cada acción del chat modal
 
+import { OnboardingData } from '../../src/types/onboarding';
+
 interface UserContext {
   full_name?: string;
   email?: string;
@@ -10,7 +12,7 @@ interface ChatMessage {
   content: string;
 }
 
-export function getProfileEditPrompt(message: string, userContext: UserContext, currentProfile?: any): string {
+export function getProfileEditPrompt(message: string, userContext: UserContext, currentProfile?: Partial<OnboardingData> | null): string {
   // Detectar y limpiar nombres corruptos
   let userName = currentProfile?.full_name || userContext.full_name || 'amigo';
   
