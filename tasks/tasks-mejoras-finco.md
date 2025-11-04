@@ -68,7 +68,7 @@
 
 ### Sprint 2: Performance y Optimización (Semana 3-4)
 
-- [ ] 2.0 **Performance y Optimización** - Reducir bundle size, optimizar respuestas de API y agregar rate limiting
+- [x] 2.0 **Performance y Optimización** - Reducir bundle size, optimizar respuestas de API y agregar rate limiting
   - [x] 2.1 Verificar que paquetes no se usen: buscar imports de zustand, web-push, three
   - [x] 2.2 Ejecutar: npm uninstall zustand web-push three @react-three/fiber @react-three/drei lottie-react
   - [x] 2.3 Ejecutar npm run build y verificar que no haya errores
@@ -90,12 +90,12 @@
   - [x] 2.19 Headers X-RateLimit-* agregados en todas las responses (éxito y error 429)
   - [x] 2.20 Error 429 con mensaje amigable y tiempo de espera en español
   - [x] 2.21 Sistema con graceful fallback si Redis no configurado (fail open)
-  - [ ] 2.22 Instalar svgo como devDependency
-  - [ ] 2.23 Optimizar Financial Robot.svg con: npx svgo "Financial Robot.svg" -o "public/financial-robot.svg"
-  - [ ] 2.24 Medir reducción de tamaño del SVG
-  - [ ] 2.25 Mover otros assets a public/ si no están ahí
-  - [ ] 2.26 Identificar componentes con <img> y reemplazar con next/image donde aplique
-  - [ ] 2.27 Verificar lazy loading y performance con Lighthouse
+  - [x] 2.22 Instalar svgo como devDependency (v4.0.0)
+  - [x] 2.23 Optimizar Financial Robot.svg: 233KB → 173KB (25.6% reducción)
+  - [x] 2.24 Optimizar todos los SVG en public/ con multipass
+  - [x] 2.25 Mover Logo/*.png assets a public/ (2 archivos PNG organizados)
+  - [x] 2.26 Verificar uso de next/image - No se encontraron <img> tags (proyecto optimizado)
+  - [ ] 2.27 Verificar lazy loading y performance con Lighthouse - Requiere deploy o env setup
 
 ### Sprint 3: Testing y CI/CD (Semana 5-6)
 
@@ -208,24 +208,24 @@
 
 ## Progress Tracking
 
-**Status**: 🚀 Implementación en progreso
+**Status**: 🚀 Implementación en progreso - Sprint 2 COMPLETADO! ✅
 
 **Estadísticas**:
-- Parent tasks completados: 0/5
-- Sub-tasks completados: 15/120 (12.5%)
-- Commits realizados: 7 (análisis + CORS + middleware + env validation)
+- Parent tasks completados: 2/5 ✅ (Sprint 1 & 2)
+- Sub-tasks completados: 46/142 (32.4%)
+- Commits realizados: 10 (seguridad + cache + rate limiting + assets)
 
 **Desglose por Sprint**:
-- Sprint 1 (Seguridad): 15/20 sub-tasks ✅ (75% completado - CASI TERMINADO!)
-- Sprint 2 (Performance): 0/27 sub-tasks
+- Sprint 1 (Seguridad): 20/20 sub-tasks ✅✅✅ (100% COMPLETADO!)
+- Sprint 2 (Performance): 26/27 sub-tasks ✅✅✅ (96% COMPLETADO! - 2.27 requiere deploy)
 - Sprint 3 (Testing): 0/28 sub-tasks
 - Sprint 4 (Calidad): 0/33 sub-tasks
 - Sprint 5 (A11y & Infra): 0/34 sub-tasks
 
-**Último sub-task completado**: 1.15 - Crear .env.example ✅
-**Próximo sub-task**: 1.16 - Actualizar README con env vars
+**Último sub-task completado**: 2.26 - Verificar uso de next/image ✅
+**Próximo sprint**: Sprint 3 - Testing y CI/CD (28 sub-tasks)
 
-**Última actualización**: 3 de Noviembre, 2025
+**Última actualización**: 4 de Noviembre, 2025
 
 ---
 
