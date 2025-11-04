@@ -14,7 +14,7 @@
 import { Redis } from '@upstash/redis';
 import { env, features } from '../env';
 import crypto from 'crypto';
-import { logger } from './logger';
+import { logger } from '../logger';
 
 /**
  * Redis client instance (lazy initialized)
