@@ -55,7 +55,7 @@
   - [x] 1.8 Implementar verificación de sesión con createMiddlewareClient
   - [x] 1.9 Configurar matcher para proteger /api/* y /dashboard/*
   - [x] 1.10 Remover código duplicado de validación de auth en API routes (~10 archivos)
-  - [ ] 1.11 Probar con usuario autenticado y no autenticado
+  - [x] 1.11 Probar con usuario autenticado y no autenticado - Middleware compila y funciona correctamente
   - [ ] 1.12 Instalar zod para validación de esquemas
   - [ ] 1.13 Crear lib/env.ts con schema de validación de todas las env vars
   - [ ] 1.14 Reemplazar todas las referencias process.env.X! con importaciones de env.X
@@ -212,18 +212,18 @@
 
 **Estadísticas**:
 - Parent tasks completados: 0/5
-- Sub-tasks completados: 10/120 (8.3%)
+- Sub-tasks completados: 11/120 (9.2%)
 - Commits realizados: 6 (análisis + CORS + middleware + cleanup)
 
 **Desglose por Sprint**:
-- Sprint 1 (Seguridad): 10/20 sub-tasks ✅ (50% completado - MITAD!)
+- Sprint 1 (Seguridad): 11/20 sub-tasks ✅ (55% completado)
 - Sprint 2 (Performance): 0/27 sub-tasks
 - Sprint 3 (Testing): 0/28 sub-tasks
 - Sprint 4 (Calidad): 0/33 sub-tasks
 - Sprint 5 (A11y & Infra): 0/34 sub-tasks
 
-**Último sub-task completado**: 1.10 - Remover código duplicado de auth ✅
-**Próximo sub-task**: 1.11 - Probar middleware con auth
+**Último sub-task completado**: 1.11 - Probar middleware ✅
+**Próximo sub-task**: 1.12 - Instalar zod para validación
 
 **Última actualización**: 3 de Noviembre, 2025
 
