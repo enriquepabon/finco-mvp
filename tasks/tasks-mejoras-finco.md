@@ -50,7 +50,7 @@
   - [x] 1.3 Configurar headers CORS específicos (Allow-Origin, Allow-Methods, Allow-Headers) - Implementado en 1.1
   - [x] 1.4 Agregar lógica condicional para dev vs prod - Implementado en 1.1
   - [x] 1.5 Probar CORS en localhost y verificar rechazo de orígenes no autorizados
-  - [ ] 1.6 Instalar @supabase/auth-helpers-nextjs para middleware
+  - [x] 1.6 Instalar @supabase/auth-helpers-nextjs para middleware
   - [ ] 1.7 Crear archivo middleware.ts en la raíz del proyecto
   - [ ] 1.8 Implementar verificación de sesión con createMiddlewareClient
   - [ ] 1.9 Configurar matcher para proteger /api/* y /dashboard/*
@@ -212,18 +212,18 @@
 
 **Estadísticas**:
 - Parent tasks completados: 0/5
-- Sub-tasks completados: 5/120 (4.2%)
-- Commits realizados: 3 (análisis + task list + CORS fix)
+- Sub-tasks completados: 6/120 (5.0%)
+- Commits realizados: 4 (análisis + task list + CORS + tests)
 
 **Desglose por Sprint**:
-- Sprint 1 (Seguridad): 5/20 sub-tasks ✅ (25% completado)
+- Sprint 1 (Seguridad): 6/20 sub-tasks ✅ (30% completado)
 - Sprint 2 (Performance): 0/27 sub-tasks
 - Sprint 3 (Testing): 0/28 sub-tasks
 - Sprint 4 (Calidad): 0/33 sub-tasks
 - Sprint 5 (A11y & Infra): 0/34 sub-tasks
 
-**Último sub-task completado**: 1.5 - Probar CORS en localhost ✅
-**Próximo sub-task**: 1.6 - Instalar @supabase/auth-helpers-nextjs
+**Último sub-task completado**: 1.6 - Instalar @supabase/auth-helpers-nextjs ✅
+**Próximo sub-task**: 1.7 - Crear archivo middleware.ts
 
 **Última actualización**: 3 de Noviembre, 2025
 
