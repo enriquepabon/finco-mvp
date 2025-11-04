@@ -54,7 +54,7 @@
   - [x] 1.7 Crear archivo middleware.ts en la raíz del proyecto
   - [x] 1.8 Implementar verificación de sesión con createMiddlewareClient
   - [x] 1.9 Configurar matcher para proteger /api/* y /dashboard/*
-  - [ ] 1.10 Remover código duplicado de validación de auth en API routes (~10 archivos)
+  - [x] 1.10 Remover código duplicado de validación de auth en API routes (~10 archivos)
   - [ ] 1.11 Probar con usuario autenticado y no autenticado
   - [ ] 1.12 Instalar zod para validación de esquemas
   - [ ] 1.13 Crear lib/env.ts con schema de validación de todas las env vars
@@ -212,18 +212,18 @@
 
 **Estadísticas**:
 - Parent tasks completados: 0/5
-- Sub-tasks completados: 9/120 (7.5%)
-- Commits realizados: 5 (análisis + CORS + tests + install + middleware)
+- Sub-tasks completados: 10/120 (8.3%)
+- Commits realizados: 6 (análisis + CORS + middleware + cleanup)
 
 **Desglose por Sprint**:
-- Sprint 1 (Seguridad): 9/20 sub-tasks ✅ (45% completado)
+- Sprint 1 (Seguridad): 10/20 sub-tasks ✅ (50% completado - MITAD!)
 - Sprint 2 (Performance): 0/27 sub-tasks
 - Sprint 3 (Testing): 0/28 sub-tasks
 - Sprint 4 (Calidad): 0/33 sub-tasks
 - Sprint 5 (A11y & Infra): 0/34 sub-tasks
 
-**Último sub-task completado**: 1.9 - Configurar matcher para protección ✅
-**Próximo sub-task**: 1.10 - Remover código duplicado de auth en API routes
+**Último sub-task completado**: 1.10 - Remover código duplicado de auth ✅
+**Próximo sub-task**: 1.11 - Probar middleware con auth
 
 **Última actualización**: 3 de Noviembre, 2025
 

@@ -207,10 +207,9 @@ export async function POST(request: NextRequest) {
       message, 
       questionNumber = 1, 
       budgetId, 
-      budgetPeriod, 
+      budgetPeriod,
       period,
-      isStructuredData = false,
-      userToken
+      isStructuredData = false
     } = body;
 
     // Usar period si está disponible, sino budgetPeriod, sino default
@@ -218,34 +217,21 @@ export async function POST(request: NextRequest) {
 
     console.log('🔄 Budget Chat API - Solicitud recibida:', { questionNumber, budgetId, budgetPeriod: finalPeriod, isStructuredData });
 
-    // Verificar token de usuario
-    if (!userToken) {
-      console.error('❌ Token de usuario faltante');
-      return NextResponse.json(
-        { error: 'Token de usuario requerido' },
-        { status: 401 }
-      );
-    }
-
-    // Crear cliente Supabase con el token del usuario
+    // Auth is now handled by middleware.ts
+    // Create Supabase client (middleware ensures user is authenticated)
     const supabase = createClient(
       process.env.NEXT_PUBLIC_SUPABASE_URL!,
-      process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!,
-      {
-        global: {
-          headers: {
-            Authorization: `Bearer ${userToken}`
-          }
-        }
-      }
+      process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!
     );
 
-    // Verificar autenticación con el token
-    const { data: { user }, error: authError } = await supabase.auth.getUser();
-    if (authError || !user) {
-      console.error('❌ Error de autenticación:', authError);
+    // Get authenticated user (guaranteed by middleware)
+    const { data: { user } } = await supabase.auth.getUser();
+
+    if (!user) {
+      // This should never happen due to middleware, but keep as safety
+      console.error('❌ Usuario no encontrado');
       return NextResponse.json(
-        { error: 'Token inválido o expirado' },
+        { error: 'Usuario no autenticado' },
         { status: 401 }
       );
     }

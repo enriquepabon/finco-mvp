@@ -9,7 +9,7 @@ import {
 
 export async function POST(request: NextRequest) {
   try {
-    const { message, chatHistory = [], userToken, attachments = [] } = await request.json();
+    const { message, chatHistory = [], attachments = [] } = await request.json();
 
     if (!message || typeof message !== 'string') {
       return NextResponse.json(
@@ -18,29 +18,18 @@ export async function POST(request: NextRequest) {
       );
     }
 
-    if (!userToken) {
-      return NextResponse.json(
-        { error: 'Token de usuario requerido' },
-        { status: 401 }
-      );
-    }
-
-    // Crear cliente de Supabase con el token del usuario
+    // Auth is now handled by middleware.ts
+    // Create Supabase client (middleware ensures user is authenticated)
     const supabase = createClient(
       process.env.NEXT_PUBLIC_SUPABASE_URL!,
-      process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!,
-      {
-        global: {
-          headers: {
-            Authorization: `Bearer ${userToken}`
-          }
-        }
-      }
+      process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!
     );
 
-    const { data: { user }, error: authError } = await supabase.auth.getUser();
+    // Get authenticated user (guaranteed by middleware)
+    const { data: { user } } = await supabase.auth.getUser();
 
-    if (authError || !user) {
+    if (!user) {
+      // This should never happen due to middleware, but keep as safety
       return NextResponse.json(
         { error: 'Usuario no autenticado' },
         { status: 401 }
