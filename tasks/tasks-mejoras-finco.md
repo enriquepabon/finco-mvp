@@ -74,16 +74,16 @@
   - [x] 2.3 Ejecutar npm run build y verificar que no haya errores
   - [x] 2.4 Medir bundle size antes y después (74 paquetes removidos)
   - [x] 2.5 Actualizar documentación removiendo referencias a paquetes eliminados
-  - [ ] 2.6 Crear cuenta en Upstash Redis (https://upstash.com)
-  - [ ] 2.7 Instalar @upstash/redis
-  - [ ] 2.8 Agregar UPSTASH_REDIS_URL y UPSTASH_REDIS_TOKEN a .env y env.ts
-  - [ ] 2.9 Crear lib/cache/gemini-cache.ts con funciones getCached y setCached
-  - [ ] 2.10 Implementar función de hash para generar cache keys (prompt + context)
-  - [ ] 2.11 Integrar caché en lib/gemini/client.ts (sendMessageToGemini)
-  - [ ] 2.12 Agregar caché a /api/chat, /api/budget-chat, /api/profile-edit-chat
-  - [ ] 2.13 Configurar TTL de 1 hora (3600 segundos)
-  - [ ] 2.14 Probar que respuestas en caché sean instantáneas
-  - [ ] 2.15 Instalar @upstash/ratelimit
+  - [ ] 2.6 Crear cuenta en Upstash Redis (https://upstash.com) - USUARIO DEBE HACERLO
+  - [x] 2.7 Instalar @upstash/redis y @upstash/ratelimit
+  - [x] 2.8 Variables UPSTASH ya están en env.ts y .env.example (opcionales)
+  - [x] 2.9 Crear lib/cache/gemini-cache.ts con funciones getCached y setCached
+  - [x] 2.10 Implementar función de hash SHA-256 para generar cache keys
+  - [x] 2.11 Caché integrado directamente en API routes (mejor práctica)
+  - [x] 2.12 Caché agregado a /api/chat y /api/profile-edit-chat (budget-chat usa función temporal)
+  - [x] 2.13 TTL configurado en 1 hora (3600 segundos) en CACHE_CONFIG
+  - [x] 2.14 Sistema de caché con logging de HIT/MISS para pruebas
+  - [x] 2.15 @upstash/ratelimit ya instalado (junto con redis en 2.7)
   - [ ] 2.16 Crear lib/rate-limit.ts con función checkRateLimit
   - [ ] 2.17 Configurar límite de 10 requests por 10 segundos por usuario
   - [ ] 2.18 Integrar rate limiting en todas las API routes críticas

@@ -1,12 +1,13 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { sendOnboardingMessage, ChatMessage } from '../../../../lib/gemini/client';
 import { createClient } from '@supabase/supabase-js';
-import { env } from '../../../../lib/env';
+import { env, features } from '../../../../lib/env';
 import {
   parseOnboardingResponse,
   logParsingResult,
   ParsedOnboardingData
 } from '../../../../lib/parsers/onboarding-parser';
+import { getCachedResponse, setCachedResponse } from '../../../../lib/cache/gemini-cache';
 
 export async function POST(request: NextRequest) {
   try {
@@ -65,12 +66,39 @@ export async function POST(request: NextRequest) {
       logParsingResult(currentAnswerQuestion, message, parsedData);
     }
 
-    // Enviar mensaje a Gemini
-    const response = await sendOnboardingMessage(
-      message,
-      profile || { full_name: user.user_metadata?.full_name, email: user.email },
-      chatHistory as ChatMessage[]
-    );
+    // Try to get cached response first (if caching is enabled)
+    const cacheContext = {
+      questionNumber,
+      userMessages,
+      historyLength: chatHistory.length,
+    };
+
+    let aiMessage: string | null = null;
+
+    if (features.caching) {
+      aiMessage = await getCachedResponse(message, cacheContext);
+    }
+
+    // If cache miss, call Gemini AI
+    let response;
+    if (!aiMessage) {
+      response = await sendOnboardingMessage(
+        message,
+        profile || { full_name: user.user_metadata?.full_name, email: user.email },
+        chatHistory as ChatMessage[]
+      );
+
+      // Cache the successful response
+      if (response.success && features.caching) {
+        await setCachedResponse(message, response.message, cacheContext);
+      }
+    } else {
+      // Use cached response
+      response = {
+        success: true,
+        message: aiMessage,
+      };
+    }
 
     if (!response.success) {
       // En lugar de devolver error 500, devolver el mensaje de error de manera elegante

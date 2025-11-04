@@ -3,6 +3,8 @@ import { supabaseAdmin } from '../../../../lib/supabase/server';
 import { sendOnboardingMessage } from '../../../../lib/gemini/client';
 import { getProfileEditPrompt } from '../../../../lib/gemini/specialized-prompts';
 import { processAIUpdate } from '../../../../lib/parsers/ai-response-parser';
+import { features } from '../../../../lib/env';
+import { getCachedResponse, setCachedResponse } from '../../../../lib/cache/gemini-cache';
 
 interface ChatMessage {
   role: 'user' | 'assistant';
@@ -67,13 +69,41 @@ export async function POST(request: NextRequest) {
     let profileUpdated = false;
     let updatedProfile = null;
 
+    // Try to get cached response first (if caching is enabled)
+    const cacheContext = {
+      userId: user.id,
+      profileVersion: currentProfile.updated_at || currentProfile.created_at,
+    };
+
+    let cachedAIMessage: string | null = null;
+
+    if (features.caching) {
+      cachedAIMessage = await getCachedResponse(specializedPrompt, cacheContext);
+    }
+
     try {
-      // Enviar mensaje a la IA
-      const aiResponse = await sendOnboardingMessage(
-        specializedPrompt,
-        { full_name: user.user_metadata?.full_name, email: user.email },
-        chatHistory as ChatMessage[]
-      );
+      // Use cached response or call Gemini AI
+      let aiResponse;
+
+      if (cachedAIMessage) {
+        // Use cached response
+        aiResponse = {
+          success: true,
+          message: cachedAIMessage,
+        };
+      } else {
+        // Call Gemini AI
+        aiResponse = await sendOnboardingMessage(
+          specializedPrompt,
+          { full_name: user.user_metadata?.full_name, email: user.email },
+          chatHistory as ChatMessage[]
+        );
+
+        // Cache the successful response
+        if (aiResponse.success && features.caching) {
+          await setCachedResponse(specializedPrompt, aiResponse.message, cacheContext);
+        }
+      }
 
       if (aiResponse.success) {
         console.log('✅ Respuesta de IA recibida:', aiResponse.message.substring(0, 100) + '...');
