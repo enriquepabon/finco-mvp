@@ -44,7 +44,7 @@
 
 ### Sprint 1: Seguridad Crítica (Semana 1-2)
 
-- [ ] 1.0 **Seguridad Crítica** - Eliminar vulnerabilidades de seguridad activas y fortalecer la autenticación
+- [x] 1.0 **Seguridad Crítica** - Eliminar vulnerabilidades de seguridad activas y fortalecer la autenticación
   - [x] 1.1 Arreglar CORS con wildcard en next.config.ts
   - [x] 1.2 Crear variable de entorno NEXT_PUBLIC_APP_URL en .env
   - [x] 1.3 Configurar headers CORS específicos (Allow-Origin, Allow-Methods, Allow-Headers) - Implementado en 1.1
@@ -60,11 +60,11 @@
   - [x] 1.13 Crear lib/env.ts con schema de validación de todas las env vars
   - [x] 1.14 Reemplazar todas las referencias process.env.X! con importaciones de env.X
   - [x] 1.15 Crear archivo .env.example con todas las variables requeridas
-  - [ ] 1.16 Actualizar README.md con instrucciones de configuración de env vars
-  - [ ] 1.17 Identificar todos los campos 'debug' en API route responses
-  - [ ] 1.18 Agregar condicional NODE_ENV === 'development' para campos debug
-  - [ ] 1.19 Probar en modo producción que no se exponga info sensible
-  - [ ] 1.20 Verificar que responses en prod solo contengan datos necesarios
+  - [x] 1.16 Actualizar README.md con instrucciones de configuración de env vars
+  - [x] 1.17 Identificar todos los campos 'debug' en API route responses
+  - [x] 1.18 Agregar condicional NODE_ENV === 'development' para campos debug
+  - [x] 1.19 Probar en modo producción que no se exponga info sensible
+  - [x] 1.20 Verificar que responses en prod solo contengan datos necesarios
 
 ### Sprint 2: Performance y Optimización (Semana 3-4)
 

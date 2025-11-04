@@ -86,9 +86,12 @@ export async function POST(request: NextRequest) {
   } catch (error) {
     console.error('❌ Error in POST /api/transactions/voice:', error);
     return NextResponse.json(
-      { 
-        error: 'Error al procesar transacción por voz', 
-        details: error instanceof Error ? error.message : 'Unknown error' 
+      {
+        error: 'Error al procesar transacción por voz',
+        // Solo mostrar detalles técnicos en desarrollo
+        ...(process.env.NODE_ENV === 'development' && {
+          details: error instanceof Error ? error.message : 'Unknown error'
+        })
       },
       { status: 500 }
     );

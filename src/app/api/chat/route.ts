@@ -76,11 +76,14 @@ export async function POST(request: NextRequest) {
       // En lugar de devolver error 500, devolver el mensaje de error de manera elegante
       return NextResponse.json({
         message: response.message || 'Lo siento, hay un problema temporal. Puedes continuar escribiendo tus respuestas.',
-        debug: {
-          questionNumber,
-          onboardingCompleted: false,
-          error: response.error || 'Error de IA'
-        }
+        // Debug info solo en desarrollo (nunca exponer errores internos en producción)
+        ...(env.NODE_ENV === 'development' && {
+          debug: {
+            questionNumber,
+            onboardingCompleted: false,
+            error: response.error || 'Error de IA'
+          }
+        })
       });
     }
 
@@ -119,15 +122,17 @@ export async function POST(request: NextRequest) {
     return NextResponse.json({
       message: response.message,
       success: true,
-      // Información adicional para debugging
-      debug: {
-        questionNumber,
-        parsedData,
-        profileExists: !!profile,
-        userMessages,
-        totalMessages: chatHistory.length,
-        onboardingCompleted: userMessages >= 9
-      }
+      // Debug info solo en desarrollo (NUNCA exponer parsedData - contiene datos financieros sensibles)
+      ...(env.NODE_ENV === 'development' && {
+        debug: {
+          questionNumber,
+          // parsedData: REMOVED - contiene información financiera sensible, no debe exponerse
+          profileExists: !!profile,
+          userMessages,
+          totalMessages: chatHistory.length,
+          onboardingCompleted: userMessages >= 9
+        }
+      })
     });
 
   } catch (error) {

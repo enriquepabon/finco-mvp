@@ -98,16 +98,86 @@ npm install
 ```
 
 ### **3. Configurar variables de entorno**
-Crear archivo `.env.local`:
-```bash
-# Supabase
-NEXT_PUBLIC_SUPABASE_URL=tu_supabase_url
-NEXT_PUBLIC_SUPABASE_ANON_KEY=tu_supabase_anon_key
-SUPABASE_SERVICE_ROLE_KEY=tu_service_role_key
 
-# Google Gemini AI
-GOOGLE_GEMINI_API_KEY=tu_gemini_api_key
+FINCO utiliza **validación automática de variables de entorno con Zod** para garantizar que todas las configuraciones requeridas estén presentes antes de iniciar la aplicación.
+
+#### **Paso 1: Copiar archivo de ejemplo**
+```bash
+cp .env.example .env.local
 ```
+
+#### **Paso 2: Configurar variables requeridas**
+
+Editar `.env.local` con tus credenciales:
+
+```bash
+# ==============================================================================
+# VARIABLES REQUERIDAS (obligatorias para que la app funcione)
+# ==============================================================================
+
+# App Configuration
+NEXT_PUBLIC_APP_URL=http://localhost:3000
+
+# Supabase - Obtener de: https://app.supabase.com/project/_/settings/api
+NEXT_PUBLIC_SUPABASE_URL=https://tu-proyecto.supabase.co
+NEXT_PUBLIC_SUPABASE_ANON_KEY=tu-anon-key-aqui
+SUPABASE_SERVICE_ROLE_KEY=tu-service-role-key-aqui
+
+# Google Gemini AI - Obtener de: https://makersuite.google.com/app/apikey
+GOOGLE_GEMINI_API_KEY=tu-gemini-api-key-aqui
+```
+
+#### **Paso 3: (Opcional) Configurar servicios adicionales**
+
+```bash
+# ==============================================================================
+# VARIABLES OPCIONALES (mejoran la experiencia pero no son obligatorias)
+# ==============================================================================
+
+# Upstash Redis - Para caché (mejora rendimiento)
+# Obtener de: https://console.upstash.com
+UPSTASH_REDIS_URL=https://tu-redis.upstash.io
+UPSTASH_REDIS_TOKEN=tu-redis-token-aqui
+
+# Sentry - Para monitoreo de errores en producción
+# Obtener de: https://sentry.io
+SENTRY_DSN=https://tu-sentry-dsn@sentry.io/project-id
+NEXT_PUBLIC_SENTRY_DSN=https://tu-sentry-dsn@sentry.io/project-id
+```
+
+#### **🔍 Validación automática**
+
+La aplicación valida todas las variables de entorno al iniciar usando **Zod schemas**:
+- ✅ Si todas las variables requeridas están configuradas → La app inicia correctamente
+- ❌ Si falta alguna variable requerida → Muestra error claro indicando qué falta
+- 🎯 Proporciona **TypeScript autocomplete** para todas las variables
+
+**Ejemplo de error si falta una variable:**
+```
+ZodError: [
+  {
+    "code": "invalid_type",
+    "expected": "string",
+    "received": "undefined",
+    "path": ["GOOGLE_GEMINI_API_KEY"],
+    "message": "GOOGLE_GEMINI_API_KEY is required"
+  }
+]
+```
+
+#### **📚 Documentación de variables**
+
+| Variable | Tipo | Requerida | Descripción | Dónde obtenerla |
+|----------|------|-----------|-------------|-----------------|
+| `NEXT_PUBLIC_APP_URL` | URL | ✅ Sí | URL de la aplicación | `http://localhost:3000` en desarrollo |
+| `NEXT_PUBLIC_SUPABASE_URL` | URL | ✅ Sí | URL de tu proyecto Supabase | [Supabase Dashboard](https://app.supabase.com/project/_/settings/api) |
+| `NEXT_PUBLIC_SUPABASE_ANON_KEY` | String | ✅ Sí | Clave anónima de Supabase | [Supabase Dashboard](https://app.supabase.com/project/_/settings/api) |
+| `SUPABASE_SERVICE_ROLE_KEY` | String | ✅ Sí | Clave de servicio de Supabase | [Supabase Dashboard](https://app.supabase.com/project/_/settings/api) |
+| `GOOGLE_GEMINI_API_KEY` | String | ✅ Sí | API Key de Google Gemini | [Google AI Studio](https://makersuite.google.com/app/apikey) |
+| `UPSTASH_REDIS_URL` | URL | ❌ No | URL de Redis para caché | [Upstash Console](https://console.upstash.com) |
+| `UPSTASH_REDIS_TOKEN` | String | ❌ No | Token de autenticación Redis | [Upstash Console](https://console.upstash.com) |
+| `SENTRY_DSN` | URL | ❌ No | DSN de Sentry (backend) | [Sentry Dashboard](https://sentry.io) |
+| `NEXT_PUBLIC_SENTRY_DSN` | URL | ❌ No | DSN de Sentry (frontend) | [Sentry Dashboard](https://sentry.io) |
 
 ### **4. Configurar base de datos**
 Ejecutar en Supabase SQL Editor:

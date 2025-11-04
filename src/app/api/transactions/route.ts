@@ -84,7 +84,11 @@ export async function POST(request: NextRequest) {
     if (insertError) {
       console.error('❌ Error inserting transaction:', insertError);
       return NextResponse.json(
-        { error: 'Error al crear transacción', details: insertError.message },
+        {
+          error: 'Error al crear transacción',
+          // Solo mostrar detalles técnicos en desarrollo
+          ...(process.env.NODE_ENV === 'development' && { details: insertError.message })
+        },
         { status: 500 }
       );
     }
@@ -104,7 +108,13 @@ export async function POST(request: NextRequest) {
   } catch (error) {
     console.error('❌ Error in POST /api/transactions:', error);
     return NextResponse.json(
-      { error: 'Error interno del servidor', details: error instanceof Error ? error.message : 'Unknown error' },
+      {
+        error: 'Error interno del servidor',
+        // Solo mostrar detalles técnicos en desarrollo
+        ...(process.env.NODE_ENV === 'development' && {
+          details: error instanceof Error ? error.message : 'Unknown error'
+        })
+      },
       { status: 500 }
     );
   }
@@ -161,7 +171,11 @@ export async function GET(request: NextRequest) {
     if (error) {
       console.error('❌ Error fetching transactions:', error);
       return NextResponse.json(
-        { error: 'Error al obtener transacciones', details: error.message },
+        {
+          error: 'Error al obtener transacciones',
+          // Solo mostrar detalles técnicos en desarrollo
+          ...(process.env.NODE_ENV === 'development' && { details: error.message })
+        },
         { status: 500 }
       );
     }

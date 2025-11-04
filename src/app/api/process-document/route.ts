@@ -86,8 +86,10 @@ export async function POST(request: NextRequest) {
 
     } catch (processingError) {
       console.error('❌ Error procesando archivo:', processingError);
-      return NextResponse.json({ 
-        error: `Error procesando ${file.name}: ${processingError instanceof Error ? processingError.message : 'Error desconocido'}` 
+      return NextResponse.json({
+        error: process.env.NODE_ENV === 'development'
+          ? `Error procesando ${file.name}: ${processingError instanceof Error ? processingError.message : 'Error desconocido'}`
+          : 'Error procesando el documento. Por favor intenta con otro archivo.'
       }, { status: 500 });
     }
 

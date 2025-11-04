@@ -67,7 +67,11 @@ export async function PUT(
     if (updateError) {
       console.error('❌ Error updating transaction:', updateError);
       return NextResponse.json(
-        { error: 'Error al actualizar transacción', details: updateError.message },
+        {
+          error: 'Error al actualizar transacción',
+          // Solo mostrar detalles técnicos en desarrollo
+          ...(process.env.NODE_ENV === 'development' && { details: updateError.message })
+        },
         { status: 500 }
       );
     }
@@ -97,7 +101,13 @@ export async function PUT(
   } catch (error) {
     console.error('❌ Error in PUT /api/transactions/[id]:', error);
     return NextResponse.json(
-      { error: 'Error interno del servidor', details: error instanceof Error ? error.message : 'Unknown error' },
+      {
+        error: 'Error interno del servidor',
+        // Solo mostrar detalles técnicos en desarrollo
+        ...(process.env.NODE_ENV === 'development' && {
+          details: error instanceof Error ? error.message : 'Unknown error'
+        })
+      },
       { status: 500 }
     );
   }
@@ -139,7 +149,11 @@ export async function DELETE(
     if (deleteError) {
       console.error('❌ Error deleting transaction:', deleteError);
       return NextResponse.json(
-        { error: 'Error al eliminar transacción', details: deleteError.message },
+        {
+          error: 'Error al eliminar transacción',
+          // Solo mostrar detalles técnicos en desarrollo
+          ...(process.env.NODE_ENV === 'development' && { details: deleteError.message })
+        },
         { status: 500 }
       );
     }
