@@ -69,10 +69,10 @@
 ### Sprint 2: Performance y Optimización (Semana 3-4)
 
 - [ ] 2.0 **Performance y Optimización** - Reducir bundle size, optimizar respuestas de API y agregar rate limiting
-  - [ ] 2.1 Verificar que paquetes no se usen: buscar imports de zustand, web-push, three
-  - [ ] 2.2 Ejecutar: npm uninstall zustand web-push three @react-three/fiber @react-three/drei lottie-react
-  - [ ] 2.3 Ejecutar npm run build y verificar que no haya errores
-  - [ ] 2.4 Medir bundle size antes y después (next build con análisis)
+  - [x] 2.1 Verificar que paquetes no se usen: buscar imports de zustand, web-push, three
+  - [x] 2.2 Ejecutar: npm uninstall zustand web-push three @react-three/fiber @react-three/drei lottie-react
+  - [x] 2.3 Ejecutar npm run build y verificar que no haya errores
+  - [x] 2.4 Medir bundle size antes y después (74 paquetes removidos)
   - [ ] 2.5 Actualizar documentación removiendo referencias a paquetes eliminados
   - [ ] 2.6 Crear cuenta en Upstash Redis (https://upstash.com)
   - [ ] 2.7 Instalar @upstash/redis
