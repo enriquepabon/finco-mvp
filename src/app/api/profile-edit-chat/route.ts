@@ -5,6 +5,12 @@ import { getProfileEditPrompt } from '../../../../lib/gemini/specialized-prompts
 import { processAIUpdate } from '../../../../lib/parsers/ai-response-parser';
 import { features } from '../../../../lib/env';
 import { getCachedResponse, setCachedResponse } from '../../../../lib/cache/gemini-cache';
+import {
+  checkRateLimit,
+  getIdentifier,
+  createRateLimitHeaders,
+  createRateLimitError,
+} from '../../../../lib/rate-limit';
 
 interface ChatMessage {
   role: 'user' | 'assistant';
@@ -39,6 +45,21 @@ export async function POST(request: NextRequest) {
       return NextResponse.json(
         { error: 'Usuario no autorizado' },
         { status: 401 }
+      );
+    }
+
+    // Check rate limit (AI endpoint: 10 requests per 10 seconds)
+    const identifier = getIdentifier(user.id, request);
+    const rateLimit = await checkRateLimit(identifier, 'AI');
+
+    if (!rateLimit.success) {
+      const headers = createRateLimitHeaders(rateLimit);
+      return NextResponse.json(
+        createRateLimitError(rateLimit),
+        {
+          status: 429,
+          headers,
+        }
       );
     }
 
@@ -165,12 +186,20 @@ Por ejemplo:
 • "Mi estado civil es casado"`;
     }
 
-    return NextResponse.json({
-      message: responseMessage,
-      success: true,
-      profileUpdated,
-      updatedProfile: profileUpdated ? updatedProfile : null
-    });
+    // Add rate limit headers to successful response
+    const rateLimitHeaders = createRateLimitHeaders(rateLimit);
+
+    return NextResponse.json(
+      {
+        message: responseMessage,
+        success: true,
+        profileUpdated,
+        updatedProfile: profileUpdated ? updatedProfile : null
+      },
+      {
+        headers: rateLimitHeaders,
+      }
+    );
 
   } catch (error) {
     console.error('❌ Error en profile-edit-chat API:', error);

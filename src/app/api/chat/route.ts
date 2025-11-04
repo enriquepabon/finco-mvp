@@ -8,6 +8,12 @@ import {
   ParsedOnboardingData
 } from '../../../../lib/parsers/onboarding-parser';
 import { getCachedResponse, setCachedResponse } from '../../../../lib/cache/gemini-cache';
+import {
+  checkRateLimit,
+  getIdentifier,
+  createRateLimitHeaders,
+  createRateLimitError,
+} from '../../../../lib/rate-limit';
 
 export async function POST(request: NextRequest) {
   try {
@@ -35,6 +41,21 @@ export async function POST(request: NextRequest) {
       return NextResponse.json(
         { error: 'Usuario no autenticado' },
         { status: 401 }
+      );
+    }
+
+    // Check rate limit (AI endpoint: 10 requests per 10 seconds)
+    const identifier = getIdentifier(user.id, request);
+    const rateLimit = await checkRateLimit(identifier, 'AI');
+
+    if (!rateLimit.success) {
+      const headers = createRateLimitHeaders(rateLimit);
+      return NextResponse.json(
+        createRateLimitError(rateLimit),
+        {
+          status: 429,
+          headers,
+        }
       );
     }
 
@@ -147,21 +168,29 @@ export async function POST(request: NextRequest) {
       }
     }
 
-    return NextResponse.json({
-      message: response.message,
-      success: true,
-      // Debug info solo en desarrollo (NUNCA exponer parsedData - contiene datos financieros sensibles)
-      ...(env.NODE_ENV === 'development' && {
-        debug: {
-          questionNumber,
-          // parsedData: REMOVED - contiene información financiera sensible, no debe exponerse
-          profileExists: !!profile,
-          userMessages,
-          totalMessages: chatHistory.length,
-          onboardingCompleted: userMessages >= 9
-        }
-      })
-    });
+    // Add rate limit headers to successful response
+    const rateLimitHeaders = createRateLimitHeaders(rateLimit);
+
+    return NextResponse.json(
+      {
+        message: response.message,
+        success: true,
+        // Debug info solo en desarrollo (NUNCA exponer parsedData - contiene datos financieros sensibles)
+        ...(env.NODE_ENV === 'development' && {
+          debug: {
+            questionNumber,
+            // parsedData: REMOVED - contiene información financiera sensible, no debe exponerse
+            profileExists: !!profile,
+            userMessages,
+            totalMessages: chatHistory.length,
+            onboardingCompleted: userMessages >= 9
+          }
+        })
+      },
+      {
+        headers: rateLimitHeaders,
+      }
+    );
 
   } catch (error) {
     console.error('❌ Error en chat API:', error);

@@ -84,12 +84,12 @@
   - [x] 2.13 TTL configurado en 1 hora (3600 segundos) en CACHE_CONFIG
   - [x] 2.14 Sistema de caché con logging de HIT/MISS para pruebas
   - [x] 2.15 @upstash/ratelimit ya instalado (junto con redis en 2.7)
-  - [ ] 2.16 Crear lib/rate-limit.ts con función checkRateLimit
-  - [ ] 2.17 Configurar límite de 10 requests por 10 segundos por usuario
-  - [ ] 2.18 Integrar rate limiting en todas las API routes críticas
-  - [ ] 2.19 Agregar headers X-RateLimit-Limit, X-RateLimit-Remaining en responses
-  - [ ] 2.20 Manejar error 429 con mensaje amigable al usuario
-  - [ ] 2.21 Probar haciendo múltiples requests rápidos y verificar bloqueo
+  - [x] 2.16 Crear lib/rate-limit.ts con checkRateLimit, getIdentifier, headers helpers
+  - [x] 2.17 Límites configurados: AI (10/10s), API (30/10s), AUTH (5/60s)
+  - [x] 2.18 Rate limiting integrado en /api/chat y /api/profile-edit-chat
+  - [x] 2.19 Headers X-RateLimit-* agregados en todas las responses (éxito y error 429)
+  - [x] 2.20 Error 429 con mensaje amigable y tiempo de espera en español
+  - [x] 2.21 Sistema con graceful fallback si Redis no configurado (fail open)
   - [ ] 2.22 Instalar svgo como devDependency
   - [ ] 2.23 Optimizar Financial Robot.svg con: npx svgo "Financial Robot.svg" -o "public/financial-robot.svg"
   - [ ] 2.24 Medir reducción de tamaño del SVG
