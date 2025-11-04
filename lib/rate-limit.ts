@@ -15,6 +15,7 @@
 import { Ratelimit } from '@upstash/ratelimit';
 import { Redis } from '@upstash/redis';
 import { env, features } from './env';
+import { logger } from './logger';
 
 /**
  * Rate limit configuration per endpoint type
@@ -92,9 +93,9 @@ function getRateLimiters(): Record<string, Ratelimit> | null {
         }),
       };
 
-      console.log('✅ Rate limiters initialized successfully');
+      logger.info('Rate limiters initialized successfully');
     } catch (error) {
-      console.error('❌ Failed to initialize rate limiters:', error);
+      logger.error('Failed to initialize rate limiters', error);
       return null;
     }
   }
@@ -128,7 +129,7 @@ export async function checkRateLimit(
 
   // If rate limiting is disabled, allow all requests
   if (!limiters) {
-    console.log('ℹ️ Rate limiting disabled (Redis not configured)');
+    logger.debug('Rate limiting disabled (Redis not configured)');
     return {
       success: true,
       limit: RATE_LIMITS[limitType].requests,
@@ -143,13 +144,16 @@ export async function checkRateLimit(
     const result = await limiter.limit(identifier);
 
     if (result.success) {
-      console.log(
-        `✅ Rate limit OK: ${identifier} - ${result.remaining}/${result.limit} remaining`
-      );
+      logger.debug('Rate limit OK', {
+        identifier,
+        remaining: result.remaining,
+        limit: result.limit
+      });
     } else {
-      console.warn(
-        `⚠️ Rate limit EXCEEDED: ${identifier} - Reset in ${Math.ceil((result.reset - Date.now()) / 1000)}s`
-      );
+      logger.warn('Rate limit EXCEEDED', {
+        identifier,
+        resetIn: `${Math.ceil((result.reset - Date.now()) / 1000)}s`
+      });
     }
 
     return {
@@ -160,7 +164,7 @@ export async function checkRateLimit(
       pending: result.pending,
     };
   } catch (error) {
-    console.error('❌ Error checking rate limit:', error);
+    logger.error('Error checking rate limit', error, { identifier, limitType });
     // On error, allow the request (fail open)
     return {
       success: true,
@@ -257,10 +261,10 @@ export async function resetRateLimit(
   try {
     const limiter = limiters[limitType];
     await limiter.resetUsedTokens(identifier);
-    console.log(`✅ Rate limit reset for: ${identifier} (${limitType})`);
+    logger.info('Rate limit reset', { identifier, limitType });
     return true;
   } catch (error) {
-    console.error('❌ Error resetting rate limit:', error);
+    logger.error('Error resetting rate limit', error, { identifier, limitType });
     return false;
   }
 }

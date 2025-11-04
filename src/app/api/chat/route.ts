@@ -14,6 +14,7 @@ import {
   createRateLimitHeaders,
   createRateLimitError,
 } from '../../../../lib/rate-limit';
+import { logger } from '../../../../lib/logger';
 
 export async function POST(request: NextRequest) {
   try {

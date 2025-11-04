@@ -14,6 +14,7 @@
 import { Redis } from '@upstash/redis';
 import { env, features } from '../env';
 import crypto from 'crypto';
+import { logger } from './logger';
 
 /**
  * Redis client instance (lazy initialized)
@@ -36,9 +37,9 @@ function getRedisClient(): Redis | null {
         url: env.UPSTASH_REDIS_URL!,
         token: env.UPSTASH_REDIS_TOKEN!,
       });
-      console.log('✅ Redis client initialized successfully');
+      logger.info('Redis client initialized successfully');
     } catch (error) {
-      console.error('❌ Failed to initialize Redis client:', error);
+      logger.error('Failed to initialize Redis client', error);
       return null;
     }
   }
@@ -108,14 +109,14 @@ export async function getCachedResponse(
     const cached = await client.get<string>(cacheKey);
 
     if (cached) {
-      console.log('✅ Cache HIT:', cacheKey.substring(0, 40) + '...');
+      logger.debug('Cache HIT', { cacheKey: cacheKey.substring(0, 40) + '...' });
       return cached;
     }
 
-    console.log('❌ Cache MISS:', cacheKey.substring(0, 40) + '...');
+    logger.debug('Cache MISS', { cacheKey: cacheKey.substring(0, 40) + '...' });
     return null;
   } catch (error) {
-    console.error('❌ Error getting cached response:', error);
+    logger.error('Error getting cached response', error);
     return null;
   }
 }
@@ -148,10 +149,13 @@ export async function setCachedResponse(
     // Store with TTL
     await client.setex(cacheKey, ttl, response);
 
-    console.log('✅ Cached response:', cacheKey.substring(0, 40) + '...', `TTL: ${ttl}s`);
+    logger.debug('Cached response', {
+      cacheKey: cacheKey.substring(0, 40) + '...',
+      ttl: `${ttl}s`
+    });
     return true;
   } catch (error) {
-    console.error('❌ Error caching response:', error);
+    logger.error('Error caching response', error);
     return false;
   }
 }
@@ -177,10 +181,12 @@ export async function clearCachedResponse(
     const cacheKey = generateCacheKey(prompt, context);
     await client.del(cacheKey);
 
-    console.log('✅ Cleared cached response:', cacheKey.substring(0, 40) + '...');
+    logger.debug('Cleared cached response', {
+      cacheKey: cacheKey.substring(0, 40) + '...'
+    });
     return true;
   } catch (error) {
-    console.error('❌ Error clearing cached response:', error);
+    logger.error('Error clearing cached response', error);
     return false;
   }
 }
@@ -204,17 +210,17 @@ export async function clearAllCache(): Promise<number> {
     const keys = await client.keys(`${CACHE_CONFIG.PREFIX}*`);
 
     if (keys.length === 0) {
-      console.log('ℹ️ No cache entries to clear');
+      logger.debug('No cache entries to clear');
       return 0;
     }
 
     // Delete all keys
     await client.del(...keys);
 
-    console.log(`✅ Cleared ${keys.length} cache entries`);
+    logger.info('Cleared all cache entries', { count: keys.length });
     return keys.length;
   } catch (error) {
-    console.error('❌ Error clearing all cache:', error);
+    logger.error('Error clearing all cache', error);
     return 0;
   }
 }
@@ -248,7 +254,7 @@ export async function getCacheStats(): Promise<{
       prefix: CACHE_CONFIG.PREFIX,
     };
   } catch (error) {
-    console.error('❌ Error getting cache stats:', error);
+    logger.error('Error getting cache stats', error);
     return {
       enabled: true,
       totalKeys: 0,
