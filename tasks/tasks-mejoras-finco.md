@@ -51,9 +51,9 @@
   - [x] 1.4 Agregar lógica condicional para dev vs prod - Implementado en 1.1
   - [x] 1.5 Probar CORS en localhost y verificar rechazo de orígenes no autorizados
   - [x] 1.6 Instalar @supabase/auth-helpers-nextjs para middleware
-  - [ ] 1.7 Crear archivo middleware.ts en la raíz del proyecto
-  - [ ] 1.8 Implementar verificación de sesión con createMiddlewareClient
-  - [ ] 1.9 Configurar matcher para proteger /api/* y /dashboard/*
+  - [x] 1.7 Crear archivo middleware.ts en la raíz del proyecto
+  - [x] 1.8 Implementar verificación de sesión con createMiddlewareClient
+  - [x] 1.9 Configurar matcher para proteger /api/* y /dashboard/*
   - [ ] 1.10 Remover código duplicado de validación de auth en API routes (~10 archivos)
   - [ ] 1.11 Probar con usuario autenticado y no autenticado
   - [ ] 1.12 Instalar zod para validación de esquemas
@@ -212,18 +212,18 @@
 
 **Estadísticas**:
 - Parent tasks completados: 0/5
-- Sub-tasks completados: 6/120 (5.0%)
-- Commits realizados: 4 (análisis + task list + CORS + tests)
+- Sub-tasks completados: 9/120 (7.5%)
+- Commits realizados: 5 (análisis + CORS + tests + install + middleware)
 
 **Desglose por Sprint**:
-- Sprint 1 (Seguridad): 6/20 sub-tasks ✅ (30% completado)
+- Sprint 1 (Seguridad): 9/20 sub-tasks ✅ (45% completado)
 - Sprint 2 (Performance): 0/27 sub-tasks
 - Sprint 3 (Testing): 0/28 sub-tasks
 - Sprint 4 (Calidad): 0/33 sub-tasks
 - Sprint 5 (A11y & Infra): 0/34 sub-tasks
 
-**Último sub-task completado**: 1.6 - Instalar @supabase/auth-helpers-nextjs ✅
-**Próximo sub-task**: 1.7 - Crear archivo middleware.ts
+**Último sub-task completado**: 1.9 - Configurar matcher para protección ✅
+**Próximo sub-task**: 1.10 - Remover código duplicado de auth en API routes
 
 **Última actualización**: 3 de Noviembre, 2025
 
