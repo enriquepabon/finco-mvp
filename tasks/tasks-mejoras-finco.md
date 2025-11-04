@@ -73,7 +73,7 @@
   - [x] 2.2 Ejecutar: npm uninstall zustand web-push three @react-three/fiber @react-three/drei lottie-react
   - [x] 2.3 Ejecutar npm run build y verificar que no haya errores
   - [x] 2.4 Medir bundle size antes y después (74 paquetes removidos)
-  - [ ] 2.5 Actualizar documentación removiendo referencias a paquetes eliminados
+  - [x] 2.5 Actualizar documentación removiendo referencias a paquetes eliminados
   - [ ] 2.6 Crear cuenta en Upstash Redis (https://upstash.com)
   - [ ] 2.7 Instalar @upstash/redis
   - [ ] 2.8 Agregar UPSTASH_REDIS_URL y UPSTASH_REDIS_TOKEN a .env y env.ts
