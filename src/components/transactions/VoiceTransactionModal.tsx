@@ -11,6 +11,54 @@ import { X, Mic, MicOff, Save, Sparkles, AlertCircle, Check } from 'lucide-react
 import { createClient } from '@supabase/supabase-js';
 import type { VoiceTransactionParsed } from '@/types/transaction';
 
+// Web Speech API type definitions
+interface SpeechRecognitionAlternative {
+  transcript: string;
+  confidence: number;
+}
+
+interface SpeechRecognitionResult {
+  [index: number]: SpeechRecognitionAlternative;
+  isFinal: boolean;
+  length: number;
+}
+
+interface SpeechRecognitionResultList {
+  [index: number]: SpeechRecognitionResult;
+  length: number;
+}
+
+interface SpeechRecognitionEvent extends Event {
+  resultIndex: number;
+  results: SpeechRecognitionResultList;
+}
+
+interface SpeechRecognitionErrorEvent extends Event {
+  error: string;
+  message: string;
+}
+
+interface SpeechRecognition extends EventTarget {
+  continuous: boolean;
+  interimResults: boolean;
+  lang: string;
+  maxAlternatives: number;
+  onstart: (() => void) | null;
+  onresult: ((event: SpeechRecognitionEvent) => void) | null;
+  onerror: ((event: SpeechRecognitionErrorEvent) => void) | null;
+  onend: (() => void) | null;
+  start(): void;
+  stop(): void;
+  abort(): void;
+}
+
+type SpeechRecognitionConstructor = new () => SpeechRecognition;
+
+interface WindowWithSpeechRecognition {
+  SpeechRecognition?: SpeechRecognitionConstructor;
+  webkitSpeechRecognition?: SpeechRecognitionConstructor;
+}
+
 interface VoiceTransactionModalProps {
   isOpen: boolean;
   onClose: () => void;
@@ -30,8 +78,8 @@ export default function VoiceTransactionModal({
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState('');
   const [confirmNewCategory, setConfirmNewCategory] = useState(false);
-  
-  const recognitionRef = useRef<any>(null);
+
+  const recognitionRef = useRef<SpeechRecognition | null>(null);
   const supabase = createClient(
     process.env.NEXT_PUBLIC_SUPABASE_URL!,
     process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!
@@ -40,31 +88,33 @@ export default function VoiceTransactionModal({
   useEffect(() => {
     // Inicializar Web Speech API
     if (typeof window !== 'undefined' && ('webkitSpeechRecognition' in window || 'SpeechRecognition' in window)) {
-      const SpeechRecognition = (window as any).webkitSpeechRecognition || (window as any).SpeechRecognition;
-      recognitionRef.current = new SpeechRecognition();
-      recognitionRef.current.continuous = false;
-      recognitionRef.current.interimResults = false;
-      recognitionRef.current.lang = 'es-CO';
+      const SpeechRecognition = (window as WindowWithSpeechRecognition).webkitSpeechRecognition || (window as WindowWithSpeechRecognition).SpeechRecognition;
+      if (SpeechRecognition) {
+        recognitionRef.current = new SpeechRecognition();
+        recognitionRef.current.continuous = false;
+        recognitionRef.current.interimResults = false;
+        recognitionRef.current.lang = 'es-CO';
 
-      recognitionRef.current.onresult = (event: any) => {
-        const transcript = event.results[0][0].transcript;
-        console.log('🎤 Transcribed:', transcript);
-        setTranscript(transcript);
-        setIsRecording(false);
-        
-        // Auto-procesar con IA
-        processWithAI(transcript);
-      };
+        recognitionRef.current.onresult = (event: SpeechRecognitionEvent) => {
+          const transcript = event.results[0][0].transcript;
+          console.log('🎤 Transcribed:', transcript);
+          setTranscript(transcript);
+          setIsRecording(false);
 
-      recognitionRef.current.onerror = (event: any) => {
-        console.error('❌ Speech recognition error:', event.error);
-        setError(`Error de reconocimiento: ${event.error}`);
-        setIsRecording(false);
-      };
+          // Auto-procesar con IA
+          processWithAI(transcript);
+        };
 
-      recognitionRef.current.onend = () => {
-        setIsRecording(false);
-      };
+        recognitionRef.current.onerror = (event: SpeechRecognitionErrorEvent) => {
+          console.error('❌ Speech recognition error:', event.error);
+          setError(`Error de reconocimiento: ${event.error}`);
+          setIsRecording(false);
+        };
+
+        recognitionRef.current.onend = () => {
+          setIsRecording(false);
+        };
+      }
     }
 
     return () => {
@@ -378,7 +428,7 @@ export default function VoiceTransactionModal({
                 <button
                   type="button"
                   onClick={handleSubmit}
-                  disabled={loading || (parsedData.new_category_name && !parsedData.suggested_category_id && !confirmNewCategory)}
+                  disabled={loading || !!(parsedData.new_category_name && !parsedData.suggested_category_id && !confirmNewCategory)}
                   className="flex-1 px-4 py-3 bg-gradient-to-r from-purple-600 to-pink-600 text-white rounded-xl font-medium hover:from-purple-700 hover:to-pink-700 transition-all disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center gap-2"
                 >
                   {loading ? (

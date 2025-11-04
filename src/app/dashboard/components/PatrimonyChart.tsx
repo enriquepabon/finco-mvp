@@ -59,7 +59,7 @@ export default function PatrimonyChart({ profile }: PatrimonyChartProps) {
   ].filter(item => item.value > 0);
 
   // Custom tooltip
-  const CustomTooltip = ({ active, payload }: any) => {
+  const CustomTooltip = ({ active, payload }: { active?: boolean; payload?: Array<{ payload: { name: string; value: number } }> }) => {
     if (active && payload && payload.length) {
       const data = payload[0].payload;
       return (
@@ -76,7 +76,8 @@ export default function PatrimonyChart({ profile }: PatrimonyChartProps) {
   };
 
   // Custom label
-  const renderLabel = (entry: any) => {
+  const renderLabel = (entry: { value?: number }) => {
+    if (entry.value === undefined) return '';
     const percent = ((entry.value / (assets + liabilities)) * 100).toFixed(0);
     return `${percent}%`;
   };

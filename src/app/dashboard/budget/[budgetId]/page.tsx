@@ -97,7 +97,7 @@ export default function BudgetDashboard() {
   
   // Estados de edición
   const [editingCategory, setEditingCategory] = useState<string | null>(null);
-  const [editValues, setEditValues] = useState<{ [key: string]: any }>({});
+  const [editValues, setEditValues] = useState<Record<string, string | number>>({});
   const [showMonthSelector, setShowMonthSelector] = useState(false);
   
   // Estados para editar subcategorías
@@ -219,7 +219,7 @@ export default function BudgetDashboard() {
     }
   };
 
-  const handleEditCategory = (categoryId: string, field: string, value: any) => {
+  const handleEditCategory = (categoryId: string, field: string, value: string | number) => {
     setEditingCategory(categoryId);
     setEditValues({ ...editValues, [`${categoryId}_${field}`]: value });
   };
@@ -229,7 +229,7 @@ export default function BudgetDashboard() {
       const category = categories.find(c => c.id === categoryId);
       if (!category) return;
 
-      const updates: any = {};
+      const updates: Record<string, string | number> = {};
       
       // Recopilar cambios
       Object.keys(editValues).forEach(key => {
@@ -565,7 +565,7 @@ export default function BudgetDashboard() {
   };
 
   // Funciones para editar subcategorías
-  const handleEditSubcategory = (subcategoryId: string, field: string, value: any) => {
+  const handleEditSubcategory = (subcategoryId: string, field: string, value: string | number) => {
     setEditSubcategoryValues(prev => ({
       ...prev,
       [`${subcategoryId}_${field}`]: value

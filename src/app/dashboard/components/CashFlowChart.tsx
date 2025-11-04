@@ -66,7 +66,7 @@ export default function CashFlowChart({ profile }: CashFlowChartProps) {
   ];
 
   // Custom tooltip
-  const CustomTooltip = ({ active, payload, label }: any) => {
+  const CustomTooltip = ({ active, payload, label }: { active?: boolean; payload?: Array<{ value: number; name: string }>; label?: string }) => {
     if (active && payload && payload.length) {
       const data = payload[0];
       return (

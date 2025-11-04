@@ -73,8 +73,8 @@ export default function ManualBudgetPage() {
     setCategories(prev => prev.filter(c => c.id !== id));
   };
 
-  const updateCategory = (id: string, field: keyof CategoryData, value: any) => {
-    setCategories(prev => prev.map(c => 
+  const updateCategory = (id: string, field: keyof CategoryData, value: string | boolean) => {
+    setCategories(prev => prev.map(c =>
       c.id === id ? { ...c, [field]: value } : c
     ));
   };

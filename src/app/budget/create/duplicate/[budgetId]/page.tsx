@@ -96,7 +96,7 @@ export default function DuplicateBudgetPage() {
 
       if (!categoriesError && categoriesData) {
         setOriginalCategories(categoriesData);
-        setCategories(categoriesData.map((cat: any) => ({
+        setCategories(categoriesData.map((cat: Category) => ({
           ...cat,
           id: Date.now().toString() + Math.random().toString()
         })));
@@ -110,9 +110,9 @@ export default function DuplicateBudgetPage() {
     }
   };
 
-  const updateCategory = (categoryId: string, field: string, value: any) => {
-    setCategories(prev => prev.map(cat => 
-      cat.id === categoryId 
+  const updateCategory = (categoryId: string, field: string, value: string | number) => {
+    setCategories(prev => prev.map(cat =>
+      cat.id === categoryId
         ? { ...cat, [field]: value }
         : cat
     ));

@@ -60,8 +60,9 @@ export default function FinancialProfile({ profile, onUpdate, compact = false }:
 
       onUpdate(data);
       setIsEditing(false);
-    } catch (error: any) {
-      console.error('Error actualizando perfil financiero:', error?.message || error);
+    } catch (error: unknown) {
+      const errorMessage = error instanceof Error ? error.message : String(error);
+      console.error('Error actualizando perfil financiero:', errorMessage);
       alert('Error al actualizar el perfil financiero. Inténtalo de nuevo.');
     } finally {
       setSaving(false);

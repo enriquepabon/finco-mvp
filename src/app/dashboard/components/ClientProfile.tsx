@@ -57,8 +57,9 @@ export default function ClientProfile({ profile, onUpdate, compact = false }: Cl
 
       onUpdate(data);
       setIsEditing(false);
-    } catch (error: any) {
-      console.error('Error actualizando perfil:', error?.message || error);
+    } catch (error: unknown) {
+      const errorMessage = error instanceof Error ? error.message : String(error);
+      console.error('Error actualizando perfil:', errorMessage);
       alert('Error al actualizar el perfil. Inténtalo de nuevo.');
     } finally {
       setSaving(false);
