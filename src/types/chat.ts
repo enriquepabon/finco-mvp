@@ -15,8 +15,8 @@ export type ChatRole = 'user' | 'assistant' | 'system';
 export interface ChatMessage {
   role: ChatRole;
   content: string;
-  timestamp?: string;
-  metadata?: Record<string, any>;
+  timestamp: Date;
+  metadata?: Record<string, unknown>;
 }
 
 /**
