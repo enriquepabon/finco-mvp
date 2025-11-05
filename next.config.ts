@@ -6,6 +6,11 @@ const nextConfig: NextConfig = {
   // This creates a minimal Node.js server that can run independently
   output: 'standalone',
 
+  // Enable instrumentation for Sentry and other monitoring tools
+  experimental: {
+    instrumentationHook: true,
+  },
+
   // Optimize images for production
   images: {
     remotePatterns: [

@@ -271,6 +271,8 @@ environment:
 
 ### **Health Check & Monitoring**
 
+#### Docker Health Checks
+
 El contenedor incluye health checks automáticos:
 - **Intervalo**: cada 30 segundos
 - **Timeout**: 10 segundos
@@ -282,6 +284,23 @@ El contenedor incluye health checks automáticos:
 docker ps
 # HEALTHY aparecerá en la columna STATUS
 ```
+
+#### Sentry Error Monitoring
+
+La aplicación incluye monitoreo de errores en tiempo real con Sentry:
+- **Error tracking**: Captura automática de errores en cliente y servidor
+- **Session replay**: Reproduce sesiones de usuario con errores
+- **Performance monitoring**: Tracking de rendimiento de APIs y páginas
+- **Privacy-first**: Datos sensibles automáticamente filtrados
+
+**Configuración** (opcional):
+```bash
+# En tu .env.local
+SENTRY_DSN=https://your-sentry-dsn@sentry.io/project-id
+NEXT_PUBLIC_SENTRY_DSN=https://your-sentry-dsn@sentry.io/project-id
+```
+
+Ver [docs/SENTRY_SETUP.md](docs/SENTRY_SETUP.md) para configuración completa.
 
 Abrir [http://localhost:3000](http://localhost:3000) en el navegador.
 
