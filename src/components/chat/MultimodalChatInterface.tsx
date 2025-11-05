@@ -21,6 +21,7 @@ import {
 } from 'lucide-react';
 import { motion, AnimatePresence } from 'framer-motion';
 import VoiceRecorderFixed from './VoiceRecorderFixed';
+import VoiceOrbInterface from './VoiceOrbInterface';
 import DocumentUploader from './DocumentUploader';
 import DynamicFormComponentFixed, { StructuredData } from '../ui/DynamicFormComponentFixed';
 import { parseStructuredData, validateStructuredData } from '../../../lib/parsers/structured-parser';
@@ -528,6 +529,25 @@ export default function MultimodalChatInterface({
     setShowDocumentUploader(!showDocumentUploader);
     if (showVoiceRecorder) setShowVoiceRecorder(false);
   };
+
+  // Render immersive voice interface when in voice mode (onboarding only)
+  if (chatType === 'onboarding' && currentInputMode === 'voice' && showVoiceRecorder) {
+    return (
+      <VoiceOrbInterface
+        onTranscriptionComplete={handleVoiceTranscription}
+        onClose={() => {
+          // Switch back to text mode
+          if (onModeChange) {
+            onModeChange('text');
+          } else {
+            setInternalInputMode('text');
+          }
+        }}
+        isProcessing={loading}
+        disabled={isCompleted}
+      />
+    );
+  }
 
   return (
     <div className={`flex flex-col h-full bg-gradient-to-br from-slate-50 to-blue-50 ${className}`}>
