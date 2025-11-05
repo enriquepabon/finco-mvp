@@ -24,6 +24,7 @@ import DocumentUploader from './DocumentUploader';
 import DynamicFormComponentFixed, { StructuredData } from '../ui/DynamicFormComponentFixed';
 import { parseStructuredData, validateStructuredData } from '../../../lib/parsers/structured-parser';
 import MonthSelector from '../ui/MonthSelector';
+import { formatCashbeatMessage, generateMessageId as generateMsgId, scrollToElement } from '../../lib/utils/chat-utils';
 
 interface MultimodalChatInterfaceProps {
   onComplete?: () => void;
@@ -42,15 +43,7 @@ interface ExtendedChatMessage extends ChatMessage {
   }[];
 }
 
-// Función para formatear mensajes de FINCO con mejor diseño
-const formatFincoMessage = (content: string) => {
-  return content
-    .replace(/([¿?][^¿?]*[¿?])/g, '<strong class="text-blue-700 block mt-3 mb-2">$1</strong>')
-    .replace(/(¿Sabías que[^.]*\.)/g, '<div class="bg-yellow-50 border-l-4 border-yellow-400 p-2 my-2 text-yellow-800"><em>💡 $1</em></div>')
-    .replace(/(Como decía [^:]*: "[^"]*")/g, '<div class="bg-blue-50 border-l-4 border-blue-400 p-2 my-2 text-blue-800"><em>📚 $1</em></div>')
-    .replace(/^([🎯🤖💰📊💪🔥]+)\s/gm, '<span class="inline-block bg-green-100 text-green-800 px-2 py-1 rounded-full text-xs font-medium mr-2 mb-1">$1</span>')
-    .replace(/\n/g, '<br>');
-};
+// Use shared formatCashbeatMessage utility (same formatting logic)
 
 export default function MultimodalChatInterface({ 
   onComplete, 
@@ -71,7 +64,7 @@ export default function MultimodalChatInterface({
   const [showStructuredForm, setShowStructuredForm] = useState(false);
   const [currentFormType, setCurrentFormType] = useState<string>('');
   const [structuredData, setStructuredData] = useState<StructuredData | null>(null);
-  const [user, setUser] = useState<any>(null);
+  const [user, setUser] = useState<unknown>(null);
   
   // Estados para selector de mes (solo para budget chat)
   const [selectedMonth, setSelectedMonth] = useState(new Date().getMonth() + 1);
@@ -87,12 +80,8 @@ export default function MultimodalChatInterface({
   const MAX_QUESTIONS = chatType === 'onboarding' ? 9 : (chatType === 'budget' ? 4 : 999);
 
   // Auto-scroll al final cuando hay nuevos mensajes
-  const scrollToBottom = () => {
-    messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' });
-  };
-
   useEffect(() => {
-    scrollToBottom();
+    scrollToElement(messagesEndRef);
   }, [messages]);
 
   // Function to get updated token
@@ -322,14 +311,10 @@ export default function MultimodalChatInterface({
     }
   };
 
-  const generateMessageId = () => {
-    return Date.now().toString() + Math.random().toString(36).substr(2, 9);
-  };
-
   const addMessage = (message: Omit<ExtendedChatMessage, 'id' | 'timestamp'>) => {
     const newMessage: ExtendedChatMessage = {
       ...message,
-      id: generateMessageId(),
+      id: generateMsgId(),
       timestamp: new Date()
     };
     setMessages(prev => [...prev, newMessage]);
@@ -601,8 +586,8 @@ export default function MultimodalChatInterface({
                     <div
                       className="text-sm leading-relaxed"
                       dangerouslySetInnerHTML={{
-                        __html: message.role === 'assistant' 
-                          ? formatFincoMessage(message.content)
+                        __html: message.role === 'assistant'
+                          ? formatCashbeatMessage(message.content)
                           : message.content
                       }}
                     />
