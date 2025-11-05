@@ -4,19 +4,20 @@ import { useState, useEffect, useRef, useCallback } from 'react';
 import { ChatMessage } from '../../../lib/gemini/client';
 import { supabase } from '../../../lib/supabase/client';
 import { useRouter } from 'next/navigation';
-import { 
-  Send, 
-  Mic, 
-  MicOff, 
-  Paperclip, 
-  X, 
-  CheckCircle, 
+import {
+  Send,
+  Mic,
+  MicOff,
+  Paperclip,
+  X,
+  CheckCircle,
   ArrowRight,
   Upload,
   FileText,
   Image as ImageIcon,
   User,
-  Bot
+  Bot,
+  MessageSquare
 } from 'lucide-react';
 import { motion, AnimatePresence } from 'framer-motion';
 import VoiceRecorderFixed from './VoiceRecorderFixed';
@@ -30,6 +31,8 @@ interface MultimodalChatInterfaceProps {
   onComplete?: () => void;
   className?: string;
   chatType?: 'onboarding' | 'general' | 'budget';
+  inputMode?: 'text' | 'voice';
+  onModeChange?: (mode: 'text' | 'voice') => void;
 }
 
 interface ExtendedChatMessage extends ChatMessage {
@@ -45,10 +48,12 @@ interface ExtendedChatMessage extends ChatMessage {
 
 // Use shared formatCashbeatMessage utility (same formatting logic)
 
-export default function MultimodalChatInterface({ 
-  onComplete, 
+export default function MultimodalChatInterface({
+  onComplete,
   className = '',
-  chatType = 'general'
+  chatType = 'general',
+  inputMode: externalInputMode,
+  onModeChange
 }: MultimodalChatInterfaceProps) {
   const [messages, setMessages] = useState<ExtendedChatMessage[]>([]);
   const [inputMessage, setInputMessage] = useState('');
@@ -59,6 +64,10 @@ export default function MultimodalChatInterface({
   const [showVoiceRecorder, setShowVoiceRecorder] = useState(false);
   const [showDocumentUploader, setShowDocumentUploader] = useState(false);
   const [attachments, setAttachments] = useState<ExtendedChatMessage['attachments']>([]);
+
+  // Internal input mode state (for voice/text toggle)
+  const [internalInputMode, setInternalInputMode] = useState<'text' | 'voice'>('text');
+  const currentInputMode = externalInputMode !== undefined ? externalInputMode : internalInputMode;
   
   // Estados para formularios estructurados
   const [showStructuredForm, setShowStructuredForm] = useState(false);
@@ -83,6 +92,16 @@ export default function MultimodalChatInterface({
   useEffect(() => {
     scrollToElement(messagesEndRef);
   }, [messages]);
+
+  // Automatically show voice recorder when in voice mode
+  useEffect(() => {
+    if (currentInputMode === 'voice') {
+      setShowVoiceRecorder(true);
+      setShowDocumentUploader(false);
+    } else {
+      setShowVoiceRecorder(false);
+    }
+  }, [currentInputMode]);
 
   // Function to get updated token
   const getValidToken = async () => {
@@ -459,7 +478,10 @@ export default function MultimodalChatInterface({
         content: transcription
       }]);
     }
-    setShowVoiceRecorder(false);
+    // Only hide voice recorder if NOT in persistent voice mode
+    if (currentInputMode !== 'voice') {
+      setShowVoiceRecorder(false);
+    }
   };
 
   const handleDocumentProcessed = async (content: string, fileName: string, fileType: string) => {
@@ -475,6 +497,25 @@ export default function MultimodalChatInterface({
     if (e.key === 'Enter' && !e.shiftKey) {
       e.preventDefault();
       handleSubmit(e as any);
+    }
+  };
+
+  const toggleInputMode = () => {
+    const newMode = currentInputMode === 'text' ? 'voice' : 'text';
+
+    // Update mode
+    if (onModeChange) {
+      onModeChange(newMode);
+    } else {
+      setInternalInputMode(newMode);
+    }
+
+    // Automatically show/hide voice recorder based on mode
+    if (newMode === 'voice') {
+      setShowVoiceRecorder(true);
+      setShowDocumentUploader(false);
+    } else {
+      setShowVoiceRecorder(false);
     }
   };
 
@@ -533,6 +574,31 @@ export default function MultimodalChatInterface({
               >
                 🔄 Reiniciar
               </button>
+
+              {/* Toggle between text and voice mode */}
+              <motion.button
+                onClick={toggleInputMode}
+                className={`px-4 py-2 rounded-lg transition-all duration-200 flex items-center gap-2 font-medium shadow-sm ${
+                  currentInputMode === 'voice'
+                    ? 'bg-purple-500 text-white hover:bg-purple-600'
+                    : 'bg-blue-500 text-white hover:bg-blue-600'
+                }`}
+                whileTap={{ scale: 0.95 }}
+                title={currentInputMode === 'text' ? 'Cambiar a modo voz' : 'Cambiar a modo texto'}
+              >
+                {currentInputMode === 'text' ? (
+                  <>
+                    <Mic className="w-4 h-4" />
+                    <span className="text-sm">Modo Voz</span>
+                  </>
+                ) : (
+                  <>
+                    <MessageSquare className="w-4 h-4" />
+                    <span className="text-sm">Modo Texto</span>
+                  </>
+                )}
+              </motion.button>
+
               <div className="text-right">
                 <span className="text-2xl font-bold text-blue-600">{Math.round((progress / MAX_QUESTIONS) * 100)}%</span>
                 <p className="text-xs text-slate-500">Completado</p>
@@ -744,67 +810,80 @@ export default function MultimodalChatInterface({
         </AnimatePresence>
 
         {/* Barra de entrada principal */}
-        <form onSubmit={handleSubmit} className="flex items-end space-x-3">
-          {/* Botones de herramientas */}
-          <div className="flex space-x-2">
-            <motion.button
-              type="button"
-              onClick={toggleVoiceRecorder}
-              className={`p-2 rounded-lg transition-colors ${
-                showVoiceRecorder 
-                  ? 'bg-blue-500 text-white' 
-                  : 'text-slate-500 hover:text-blue-600 hover:bg-blue-50'
-              }`}
-              whileTap={{ scale: 0.95 }}
-              title="Grabar voz"
-            >
-              <Mic className="w-5 h-5" />
-            </motion.button>
-
-            <motion.button
-              type="button"
-              onClick={toggleDocumentUploader}
-              className={`p-2 rounded-lg transition-colors ${
-                showDocumentUploader 
-                  ? 'bg-blue-500 text-white' 
-                  : 'text-slate-500 hover:text-blue-600 hover:bg-blue-50'
-              }`}
-              whileTap={{ scale: 0.95 }}
-              title="Subir documento"
-            >
-              <Paperclip className="w-5 h-5" />
-            </motion.button>
+        {currentInputMode === 'voice' ? (
+          /* Voice mode: Show only voice instructions */
+          <div className="text-center py-4">
+            <p className="text-slate-600 text-sm mb-2">
+              🎙️ <strong>Modo Voz Activado</strong> - Usa el grabador de voz arriba para responder
+            </p>
+            <p className="text-slate-500 text-xs">
+              Presiona el botón "Modo Texto" en la parte superior para cambiar a escritura
+            </p>
           </div>
+        ) : (
+          /* Text mode: Show normal input with tools */
+          <form onSubmit={handleSubmit} className="flex items-end space-x-3">
+            {/* Botones de herramientas */}
+            <div className="flex space-x-2">
+              <motion.button
+                type="button"
+                onClick={toggleVoiceRecorder}
+                className={`p-2 rounded-lg transition-colors ${
+                  showVoiceRecorder
+                    ? 'bg-blue-500 text-white'
+                    : 'text-slate-500 hover:text-blue-600 hover:bg-blue-50'
+                }`}
+                whileTap={{ scale: 0.95 }}
+                title="Grabar voz"
+              >
+                <Mic className="w-5 h-5" />
+              </motion.button>
 
-          {/* Campo de texto */}
-          <div className="flex-1">
-            <textarea
-              ref={inputRef}
-              value={inputMessage}
-              onChange={(e) => setInputMessage(e.target.value)}
-              onKeyPress={handleKeyPress}
-              placeholder="Escribe tu mensaje, graba tu voz, o sube un documento..."
-              disabled={loading || isCompleted}
-              className="w-full px-4 py-3 border border-slate-300 rounded-lg resize-none focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent disabled:opacity-50 disabled:cursor-not-allowed text-slate-900 font-medium placeholder:text-slate-500"
-              rows={1}
-              style={{ minHeight: '48px', maxHeight: '120px' }}
-            />
-          </div>
+              <motion.button
+                type="button"
+                onClick={toggleDocumentUploader}
+                className={`p-2 rounded-lg transition-colors ${
+                  showDocumentUploader
+                    ? 'bg-blue-500 text-white'
+                    : 'text-slate-500 hover:text-blue-600 hover:bg-blue-50'
+                }`}
+                whileTap={{ scale: 0.95 }}
+                title="Subir documento"
+              >
+                <Paperclip className="w-5 h-5" />
+              </motion.button>
+            </div>
 
-          {/* Botón de envío */}
-          <motion.button
-            type="submit"
-            disabled={loading || isCompleted || (!inputMessage.trim() && !showVoiceRecorder && !showDocumentUploader)}
-            className="p-3 bg-blue-500 text-white rounded-lg hover:bg-blue-600 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-2 disabled:opacity-50 disabled:cursor-not-allowed"
-            whileTap={{ scale: 0.95 }}
-          >
-            {loading ? (
-              <div className="w-5 h-5 border-2 border-white border-t-transparent rounded-full animate-spin" />
-            ) : (
-              <Send className="w-5 h-5" />
-            )}
-          </motion.button>
-        </form>
+            {/* Campo de texto */}
+            <div className="flex-1">
+              <textarea
+                ref={inputRef}
+                value={inputMessage}
+                onChange={(e) => setInputMessage(e.target.value)}
+                onKeyPress={handleKeyPress}
+                placeholder="Escribe tu mensaje, graba tu voz, o sube un documento..."
+                disabled={loading || isCompleted}
+                className="w-full px-4 py-3 border border-slate-300 rounded-lg resize-none focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent disabled:opacity-50 disabled:cursor-not-allowed text-slate-900 font-medium placeholder:text-slate-500"
+                rows={1}
+                style={{ minHeight: '48px', maxHeight: '120px' }}
+              />
+            </div>
+
+            {/* Botón de envío */}
+            <motion.button
+              type="submit"
+              disabled={loading || isCompleted || (!inputMessage.trim() && !showVoiceRecorder && !showDocumentUploader)}
+              className="p-3 bg-blue-500 text-white rounded-lg hover:bg-blue-600 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-2 disabled:opacity-50 disabled:cursor-not-allowed"
+              whileTap={{ scale: 0.95 }}
+            >
+              {loading ? (
+                <div className="w-5 h-5 border-2 border-white border-t-transparent rounded-full animate-spin" />
+              ) : (
+                <Send className="w-5 h-5" />
+              )}
+            </motion.button>
+          </form>
+        )}
       </div>
 
       {/* Mensaje de completado */}
