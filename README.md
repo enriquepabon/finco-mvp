@@ -197,6 +197,92 @@ En Google Console:
 npm run dev
 ```
 
+## 🐳 Despliegue con Docker
+
+FINCO incluye configuración Docker lista para producción, optimizada para despliegues en contenedores.
+
+### **Características Docker**
+- 🏗️ **Multi-stage build** - Imagen optimizada (~150MB)
+- 🔐 **Usuario no-root** - Seguridad mejorada
+- ❤️ **Health checks** - Monitoreo automático vía `/api/health`
+- ⚡ **Standalone output** - Servidor Next.js optimizado
+- 📦 **Resource limits** - Límites configurables de CPU y memoria
+
+### **Opción 1: Docker directo**
+
+**1. Construir la imagen:**
+```bash
+docker build -t finco-mvp .
+```
+
+**2. Ejecutar el contenedor:**
+```bash
+docker run -p 3000:3000 \
+  -e NEXT_PUBLIC_SUPABASE_URL=tu_supabase_url \
+  -e NEXT_PUBLIC_SUPABASE_ANON_KEY=tu_anon_key \
+  -e GOOGLE_GEMINI_API_KEY=tu_gemini_key \
+  -e NEXT_PUBLIC_APP_URL=http://localhost:3000 \
+  finco-mvp
+```
+
+**3. Verificar estado:**
+```bash
+# Health check
+curl http://localhost:3000/api/health
+
+# Respuesta esperada:
+# {
+#   "status": "ok",
+#   "timestamp": "2025-11-05T10:30:00.000Z",
+#   "uptime": 12345.67,
+#   "environment": "production"
+# }
+```
+
+### **Opción 2: Docker Compose (Recomendado)**
+
+**1. Asegurar que `.env` esté configurado** (ver sección de variables de entorno arriba)
+
+**2. Iniciar la aplicación:**
+```bash
+docker-compose up -d
+```
+
+**3. Ver logs en tiempo real:**
+```bash
+docker-compose logs -f finco-app
+```
+
+**4. Detener la aplicación:**
+```bash
+docker-compose down
+```
+
+### **Configuración de Producción**
+
+Para producción, actualiza las variables de entorno en `docker-compose.yml`:
+
+```yaml
+environment:
+  - NODE_ENV=production
+  - NEXT_PUBLIC_APP_URL=https://tu-dominio.com
+  # ... otras variables de entorno
+```
+
+### **Health Check & Monitoring**
+
+El contenedor incluye health checks automáticos:
+- **Intervalo**: cada 30 segundos
+- **Timeout**: 10 segundos
+- **Reintentos**: 3 antes de marcar como unhealthy
+- **Start period**: 40 segundos para que la app inicie
+
+**Ver estado del contenedor:**
+```bash
+docker ps
+# HEALTHY aparecerá en la columna STATUS
+```
+
 Abrir [http://localhost:3000](http://localhost:3000) en el navegador.
 
 ## 📊 Arquitectura del Sistema

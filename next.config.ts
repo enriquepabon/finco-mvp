@@ -2,6 +2,20 @@ import type { NextConfig } from "next";
 import { env } from './lib/env';
 
 const nextConfig: NextConfig = {
+  // Enable standalone output for Docker deployments
+  // This creates a minimal Node.js server that can run independently
+  output: 'standalone',
+
+  // Optimize images for production
+  images: {
+    remotePatterns: [
+      {
+        protocol: 'https',
+        hostname: '**',
+      },
+    ],
+  },
+
   // Headers CORS configurados por entorno
   async headers() {
     const isDevelopment = env.NODE_ENV === 'development';
