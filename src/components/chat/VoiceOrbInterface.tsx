@@ -76,14 +76,30 @@ export default function VoiceOrbInterface({
           console.error('❌ Error en transcripción:', event.error);
 
           if (event.error === 'no-speech') {
-            setError('No se detectó voz...');
+            // No es un error grave, solo no detectó voz
+            setError('');
+            // Auto-reintentar
+            setTimeout(() => {
+              if (recognitionRef.current && !isListening) {
+                try {
+                  recognitionRef.current.start();
+                } catch (e) {
+                  // Ignorar si ya está corriendo
+                }
+              }
+            }, 1000);
           } else if (event.error === 'not-allowed') {
-            setError('Permisos de micrófono denegados');
+            setError('⚠️ Permisos de micrófono denegados. Por favor, permite el acceso al micrófono en tu navegador.');
             setIsListening(false);
           } else if (event.error === 'network') {
-            setError('Error de red. Verifica tu conexión.');
+            setError('⚠️ Error de conexión. Verifica tu internet e intenta de nuevo.');
+            setIsListening(false);
+          } else if (event.error === 'aborted') {
+            // Ignorar - es un stop normal
+            setError('');
           } else {
-            setError(`Error: ${event.error}`);
+            setError(`⚠️ Error: ${event.error}`);
+            setIsListening(false);
           }
         };
 
@@ -137,6 +153,7 @@ export default function VoiceOrbInterface({
     if (isListening) {
       stopListening();
     } else {
+      setError(''); // Clear any previous errors
       startListening();
     }
   };
@@ -278,9 +295,31 @@ export default function VoiceOrbInterface({
                 initial={{ opacity: 0, y: 10 }}
                 animate={{ opacity: 1, y: 0 }}
                 exit={{ opacity: 0, y: -10 }}
-                className="text-red-400 text-lg"
+                className="space-y-4"
               >
-                {error}
+                <div className="text-red-400 text-lg bg-red-500/10 backdrop-blur-sm rounded-2xl p-4">
+                  {error}
+                </div>
+                {error.includes('red') && (
+                  <div className="text-white/70 text-sm space-y-2">
+                    <p>💡 <strong>Posibles soluciones:</strong></p>
+                    <ul className="text-left space-y-1">
+                      <li>• Verifica tu conexión a internet</li>
+                      <li>• Prueba en Google Chrome (funciona mejor)</li>
+                      <li>• Recarga la página (Cmd+R o Ctrl+R)</li>
+                    </ul>
+                  </div>
+                )}
+                {error.includes('Permisos') && (
+                  <div className="text-white/70 text-sm space-y-2">
+                    <p>💡 <strong>Cómo permitir el micrófono:</strong></p>
+                    <ul className="text-left space-y-1">
+                      <li>• Haz clic en el candado 🔒 en la barra de URL</li>
+                      <li>• Busca "Micrófono" y cambia a "Permitir"</li>
+                      <li>• Recarga la página</li>
+                    </ul>
+                  </div>
+                )}
               </motion.div>
             ) : isProcessing ? (
               <motion.div
@@ -333,16 +372,18 @@ export default function VoiceOrbInterface({
         {/* Control button */}
         <motion.button
           onClick={toggleListening}
-          disabled={disabled || !!error}
+          disabled={disabled}
           className={`px-8 py-4 rounded-full font-semibold text-lg shadow-lg transition-all ${
             isListening
               ? 'bg-red-500 hover:bg-red-600 text-white'
+              : error
+              ? 'bg-yellow-500 hover:bg-yellow-600 text-white'
               : 'bg-white hover:bg-gray-100 text-gray-900'
           } disabled:opacity-50 disabled:cursor-not-allowed`}
           whileHover={{ scale: 1.05 }}
           whileTap={{ scale: 0.95 }}
         >
-          {isListening ? 'Pausar' : 'Iniciar'}
+          {isListening ? 'Pausar' : error ? 'Reintentar' : 'Iniciar'}
         </motion.button>
 
         {/* Instructions */}
