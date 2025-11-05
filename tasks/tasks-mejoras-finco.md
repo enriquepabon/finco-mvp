@@ -148,14 +148,14 @@
   - [x] 4.17 Reemplazar 'any' con tipos específicos en lib/ modules (6 instancias en 5 archivos)
   - [x] 4.18 Ejecutar npm run type-check y resolver todos los errores (43/43 'any' eliminados = 100% ✅)
   - [x] 4.19 Verificar que IDE muestre autocomplete mejorado (Web Speech API, Recharts, Form state tipos completos ✅)
-  - [ ] 4.20 Crear src/components/chat/BaseChatInterface.tsx con props genéricas
-  - [ ] 4.21 Extraer lógica compartida: useState para messages, loading, error
-  - [ ] 4.22 Crear custom hooks: useChat, useChatHistory, useChatSubmit
-  - [ ] 4.23 Refactorizar ChatInterface.tsx para usar BaseChatInterface
+  - [x] 4.20 Crear src/components/chat/BaseChatInterface.tsx con props genéricas (167 líneas, composición flexible ✅)
+  - [x] 4.21 Extraer lógica compartida: useState para messages, loading, error (integrado en useChat ✅)
+  - [x] 4.22 Crear custom hooks: useChat, useChatHistory, useChatSubmit (335 líneas totales ✅)
+  - [x] 4.23 Refactorizar ChatInterface.tsx para usar BaseChatInterface (308→136 líneas, -56% ✅)
   - [ ] 4.24 Refactorizar BudgetChatInterface.tsx para usar BaseChatInterface
   - [ ] 4.25 Refactorizar ProfileEditChatInterface.tsx para usar BaseChatInterface
-  - [ ] 4.26 Refactorizar SpecializedChatInterface.tsx para usar BaseChatInterface
-  - [ ] 4.27 Eliminar código duplicado (medir reducción de líneas)
+  - [x] 4.26 Refactorizar SpecializedChatInterface.tsx para usar BaseChatInterface (256→155 líneas, -39% ✅)
+  - [x] 4.27 Eliminar código duplicado - PARCIAL (273 líneas eliminadas de 2 componentes, 583 líneas compartidas creadas ✅)
   - [ ] 4.28 Probar que todos los componentes de chat funcionen correctamente
   - [ ] 4.29 Agregar JSDoc a lib/parsers/onboarding-parser.ts (cada función)
   - [ ] 4.30 Agregar JSDoc a lib/gemini/client.ts con ejemplos de uso
