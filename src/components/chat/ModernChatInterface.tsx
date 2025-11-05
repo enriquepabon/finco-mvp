@@ -1,16 +1,15 @@
 'use client';
 
-import { useState, useEffect, useRef } from 'react';
+import { useState, useEffect } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
-import { Send, Sparkles, MessageCircle, CheckCircle } from 'lucide-react';
-import { ChatMessage as BaseChatMessage } from '../../../lib/gemini/client';
-
-interface ChatMessage extends BaseChatMessage {
-  id: string;
-}
+import { Send, Sparkles, CheckCircle } from 'lucide-react';
 import { supabase } from '../../../lib/supabase/client';
 import { useRouter } from 'next/navigation';
 import CashbeatLogo from '../ui/CashbeatLogo';
+import { useChat } from '../../hooks/useChat';
+import { useChatSubmit } from '../../hooks/useChatSubmit';
+import { formatCashbeatMessage, formatTime } from '../../lib/utils/chat-utils';
+import { ChatMessage } from '../../types/chat';
 
 interface ModernChatInterfaceProps {
   onComplete?: () => void;
@@ -18,155 +17,66 @@ interface ModernChatInterfaceProps {
 }
 
 export default function ModernChatInterface({ onComplete, className = '' }: ModernChatInterfaceProps) {
-  const [user, setUser] = useState<any>(null);
-  const [userToken, setUserToken] = useState<string>('');
-  const router = useRouter();
-  const [messages, setMessages] = useState<ChatMessage[]>([]);
-  const [inputMessage, setInputMessage] = useState('');
-  const [loading, setLoading] = useState(false);
-  const [error, setError] = useState('');
-  const [progress, setProgress] = useState(0);
-  const [isCompleted, setIsCompleted] = useState(false);
+  const [user, setUser] = useState<unknown>(null);
   const [isTyping, setIsTyping] = useState(false);
-  const messagesEndRef = useRef<HTMLDivElement>(null);
+  const router = useRouter();
 
   const MAX_QUESTIONS = 9;
 
-  // Obtener usuario al cargar
+  const {
+    messages,
+    inputMessage,
+    setInputMessage,
+    loading,
+    error,
+    progress: rawProgress,
+    isCompleted,
+    messagesEndRef,
+    sendMessage: baseSendMessage
+  } = useChat({
+    apiEndpoint: '/api/chat',
+    welcomeMessage: '¡Hola! 👋 Soy Cashbeat IA, tu coach financiero personal. \n\nTe haré exactamente **9 preguntas básicas** para conocer tu perfil financiero y que puedas empezar a crear tu presupuesto. Será rápido y enfocado.\n\n¿Cómo te llamas?',
+    maxQuestions: MAX_QUESTIONS,
+    onComplete: () => {
+      onComplete?.();
+      router.push('/dashboard');
+    },
+    includeUserToken: true
+  });
+
+  // Calculate progress as percentage
+  const progress = (rawProgress / MAX_QUESTIONS) * 100;
+
+  // Get user on mount for validation
   useEffect(() => {
     const getUser = async () => {
-      const { data: { user }, error } = await supabase.auth.getUser();
-      const { data: { session } } = await supabase.auth.getSession();
-      
+      const { data: { user } } = await supabase.auth.getUser();
       setUser(user);
-      setUserToken(session?.access_token || '');
     };
     getUser();
   }, []);
 
-  // Scroll automático
-  const scrollToBottom = () => {
-    messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' });
-  };
-
-  useEffect(() => {
-    scrollToBottom();
-  }, [messages, isTyping]);
-
-  // Mensaje de bienvenida inicial
-  useEffect(() => {
-    const welcomeMessage: ChatMessage = {
-      id: '1',
-      role: 'assistant',
-      content: '¡Hola! 👋 Soy Cashbeat IA, tu coach financiero personal. \n\nTe haré exactamente **9 preguntas básicas** para conocer tu perfil financiero y que puedas empezar a crear tu presupuesto. Será rápido y enfocado.\n\n¿Cómo te llamas?',
-      timestamp: new Date()
-    };
-    setMessages([welcomeMessage]);
-  }, []);
-
-  const formatCashbeatMessage = (content: string) => {
-    if (!content || typeof content !== 'string') {
-      return '';
-    }
-    
-    return content
-      .replace(/([¿?][^¿?]*[¿?])/g, '<strong class="text-blue-700 block mt-3 mb-2">$1</strong>')
-      .replace(/(¿Sabías que[^.]*\.)/g, '<div class="bg-yellow-50 border-l-4 border-yellow-400 p-2 my-2 text-yellow-800"><em>💡 $1</em></div>')
-      .replace(/(Como decía [^:]*: "[^"]*")/g, '<div class="bg-blue-50 border-l-4 border-blue-400 p-2 my-2 text-blue-800"><em>📚 $1</em></div>')
-      .replace(/^([🎯🤖💰📊💪🔥]+)\s/gm, '<span class="inline-block bg-green-100 text-green-800 px-2 py-1 rounded-full text-xs font-medium mr-2 mb-1">$1</span>')
-      .replace(/\n/g, '<br>');
-  };
-
+  // Wrapped send message with typing animation delay
   const handleSendMessage = async () => {
-    if (!inputMessage.trim() || loading || isCompleted) return;
-
-    // Validar que tenemos usuario
     if (!user) {
-      setError('Error: Usuario no autenticado. Por favor, inicia sesión nuevamente.');
       return;
     }
 
-    const userMessage: ChatMessage = {
-      id: Date.now().toString(),
-      role: 'user',
-      content: inputMessage.trim(),
-      timestamp: new Date()
-    };
-
-    setMessages(prev => [...prev, userMessage]);
-    setInputMessage('');
-    setLoading(true);
     setIsTyping(true);
-    setError('');
 
-    try {
-      const response = await fetch('/api/chat', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({
-          message: inputMessage.trim(),
-          chatHistory: messages.map(msg => ({
-            role: msg.role,
-            content: msg.content
-          })),
-          userToken: userToken
-        })
-      });
+    // Use base sendMessage from useChat hook
+    await baseSendMessage();
 
-      if (!response.ok) {
-        throw new Error(`HTTP error! status: ${response.status}`);
-      }
-
-      const data = await response.json();
-      
-      // Simular typing delay
-      setTimeout(() => {
-        const assistantMessage: ChatMessage = {
-          id: Date.now().toString(),
-          role: 'assistant',
-          content: data.message,
-          timestamp: new Date()
-        };
-
-        setMessages(prev => [...prev, assistantMessage]);
-        setIsTyping(false);
-        
-        // Actualizar progreso
-        const currentQuestionCount = Math.ceil((messages.length + 1) / 2);
-        const newProgress = Math.min((currentQuestionCount / MAX_QUESTIONS) * 100, 100);
-        setProgress(newProgress);
-
-        // Verificar si está completo (9 preguntas respondidas)
-        if (currentQuestionCount >= MAX_QUESTIONS) {
-          setIsCompleted(true);
-          setTimeout(() => {
-            router.push('/dashboard');
-          }, 2000);
-        }
-      }, 1500);
-
-    } catch (error) {
-      console.error('Error sending message:', error);
-      setError('Error al enviar el mensaje. Inténtalo de nuevo.');
+    // Simulate typing delay before showing response
+    setTimeout(() => {
       setIsTyping(false);
-    } finally {
-      setLoading(false);
-    }
+    }, 1500);
   };
 
-  const handleKeyPress = (e: React.KeyboardEvent) => {
-    if (e.key === 'Enter' && !e.shiftKey) {
-      e.preventDefault();
-      handleSendMessage();
-    }
-  };
-
-  const formatTime = (timestamp: Date) => {
-    return timestamp.toLocaleTimeString('es-ES', { 
-      hour: '2-digit', 
-      minute: '2-digit' 
-    });
-  };
+  const { handleKeyPress } = useChatSubmit({
+    onSubmit: handleSendMessage,
+    disabled: loading || isCompleted
+  });
 
   return (
     <div className={`flex flex-col h-full bg-gradient-to-br from-slate-100 via-blue-50 to-indigo-100 relative overflow-hidden ${className}`}>
@@ -222,9 +132,9 @@ export default function ModernChatInterface({ onComplete, className = '' }: Mode
       <div className="flex-1 overflow-y-auto px-6 py-6 relative z-10">
         <div className="max-w-4xl mx-auto space-y-6">
           <AnimatePresence>
-            {messages.map((message, index) => (
+            {messages.map((message: ChatMessage, index: number) => (
               <motion.div
-                key={message.id}
+                key={index}
                 initial={{ opacity: 0, y: 30, scale: 0.95 }}
                 animate={{ opacity: 1, y: 0, scale: 1 }}
                 exit={{ opacity: 0, y: -20, scale: 0.95 }}
@@ -348,7 +258,7 @@ export default function ModernChatInterface({ onComplete, className = '' }: Mode
               <textarea
                 value={inputMessage}
                 onChange={(e) => setInputMessage(e.target.value)}
-                onKeyPress={handleKeyPress}
+                onKeyDown={handleKeyPress}
                 placeholder={loading ? "Cashbeat IA está pensando..." : "Escribe tu respuesta..."}
                 disabled={loading || isCompleted}
                 className="w-full bg-white/90 backdrop-blur-xl border border-white/50 rounded-3xl px-6 py-4 pr-16 focus:outline-none focus:ring-2 focus:ring-blue-400/50 focus:border-blue-400/50 focus:bg-white resize-none transition-all duration-300 placeholder-gray-500 shadow-lg text-gray-900 font-medium"
