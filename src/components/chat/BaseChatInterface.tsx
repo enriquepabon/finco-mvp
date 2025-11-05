@@ -142,13 +142,18 @@ export default function BaseChatInterface({
       {/* Input Area */}
       <div className={`border-t border-gray-200 p-4 flex-shrink-0 ${inputClassName}`}>
         <div className="flex space-x-2">
+          <label htmlFor="chat-message-input" className="sr-only">
+            Mensaje de chat
+          </label>
           <input
+            id="chat-message-input"
             type="text"
             value={inputMessage}
             onChange={(e) => onInputChange(e.target.value)}
             onKeyDown={handleKeyPress}
             placeholder={inputPlaceholder}
             disabled={disabled || loading}
+            aria-label="Mensaje de chat"
             className="flex-1 px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent disabled:bg-gray-100 disabled:cursor-not-allowed"
           />
           <button

@@ -73,6 +73,23 @@ export default function AdvancedChatModal({ isOpen, onClose }: AdvancedChatModal
     scrollToBottom();
   }, [messages]);
 
+  // Escape key handler for accessibility
+  useEffect(() => {
+    const handleEscapeKey = (event: KeyboardEvent) => {
+      if (event.key === 'Escape' && isOpen) {
+        onClose();
+      }
+    };
+
+    if (isOpen) {
+      document.addEventListener('keydown', handleEscapeKey);
+    }
+
+    return () => {
+      document.removeEventListener('keydown', handleEscapeKey);
+    };
+  }, [isOpen, onClose]);
+
   const handleOptionSelect = (optionId: string) => {
     setSelectedOption(optionId);
     

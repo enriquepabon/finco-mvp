@@ -330,6 +330,8 @@ export default function ProfileEditChatInterface({ onBack, className = '', actio
           <div className="flex gap-2 mb-3">
             <button
               onClick={() => setShowVoiceRecorder(!showVoiceRecorder)}
+              aria-pressed={showVoiceRecorder}
+              aria-label="Grabar nota de voz"
               className="flex items-center gap-2 px-4 py-2 bg-gradient-to-r from-purple-100 to-pink-100 text-purple-700 rounded-xl hover:from-purple-200 hover:to-pink-200 transition-all"
             >
               <MessageCircle className="w-4 h-4" />
@@ -338,6 +340,8 @@ export default function ProfileEditChatInterface({ onBack, className = '', actio
 
             <button
               onClick={() => setShowDocumentUploader(!showDocumentUploader)}
+              aria-pressed={showDocumentUploader}
+              aria-label="Subir documento"
               className="flex items-center gap-2 px-4 py-2 bg-gradient-to-r from-blue-100 to-cyan-100 text-blue-700 rounded-xl hover:from-blue-200 hover:to-cyan-200 transition-all"
             >
               <CheckCircle className="w-4 h-4" />
