@@ -152,10 +152,10 @@
   - [x] 4.21 Extraer lógica compartida: useState para messages, loading, error (integrado en useChat ✅)
   - [x] 4.22 Crear custom hooks: useChat, useChatHistory, useChatSubmit (335 líneas totales ✅)
   - [x] 4.23 Refactorizar ChatInterface.tsx para usar BaseChatInterface (308→136 líneas, -56% ✅)
-  - [ ] 4.24 Refactorizar BudgetChatInterface.tsx para usar BaseChatInterface
-  - [ ] 4.25 Refactorizar ProfileEditChatInterface.tsx para usar BaseChatInterface
+  - [x] 4.24 Refactorizar BudgetChatInterface.tsx para usar shared hooks (415→405 líneas, -2.4% ✅)
+  - [x] 4.25 Refactorizar ProfileEditChatInterface.tsx para usar shared hooks (456→393 líneas, -13.8% ✅)
   - [x] 4.26 Refactorizar SpecializedChatInterface.tsx para usar BaseChatInterface (256→155 líneas, -39% ✅)
-  - [x] 4.27 Eliminar código duplicado - PARCIAL (273 líneas eliminadas de 2 componentes, 583 líneas compartidas creadas ✅)
+  - [x] 4.27 Eliminar código duplicado - 4/6 componentes completados (346 líneas eliminadas, 583 líneas compartidas ✅)
   - [ ] 4.28 Probar que todos los componentes de chat funcionen correctamente
   - [ ] 4.29 Agregar JSDoc a lib/parsers/onboarding-parser.ts (cada función)
   - [ ] 4.30 Agregar JSDoc a lib/gemini/client.ts con ejemplos de uso
