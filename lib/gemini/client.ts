@@ -1,11 +1,37 @@
+/**
+ * Google Gemini AI Client
+ *
+ * Provides integration with Google's Gemini AI model for conversational financial coaching.
+ * Handles chat history, context injection, error handling, and quota management.
+ *
+ * @module gemini/client
+ */
+
 import { GoogleGenerativeAI } from '@google/generative-ai';
 import { env } from '../env';
 import { OnboardingData } from '../../src/types/onboarding';
 
-// Inicializar cliente de Google Gemini con env validado
+/**
+ * Google Generative AI client instance.
+ * Initialized with API key from validated environment variables.
+ *
+ * @constant
+ * @type {GoogleGenerativeAI}
+ */
 const genAI = new GoogleGenerativeAI(env.GOOGLE_GEMINI_API_KEY);
 
-// Configuración del modelo
+/**
+ * Configured Gemini 1.5 Flash model instance.
+ *
+ * Model configuration:
+ * - temperature: 0.8 (balanced creativity)
+ * - topP: 0.8 (nucleus sampling)
+ * - topK: 40 (top K tokens)
+ * - maxOutputTokens: 1000 (max response length)
+ *
+ * @constant
+ * @type {GenerativeModel}
+ */
 const model = genAI.getGenerativeModel({ 
   model: "gemini-1.5-flash",
   generationConfig: {
@@ -16,12 +42,28 @@ const model = genAI.getGenerativeModel({
   },
 });
 
+/**
+ * Represents a single message in a chat conversation.
+ *
+ * @interface ChatMessage
+ * @property {'user' | 'assistant'} role - Message author: 'user' for client, 'assistant' for FINCO AI
+ * @property {string} content - Message text content
+ * @property {Date} [timestamp] - Optional message timestamp
+ */
 export interface ChatMessage {
   role: 'user' | 'assistant';
   content: string;
   timestamp?: Date;
 }
 
+/**
+ * Response object from Gemini AI operations.
+ *
+ * @interface ChatResponse
+ * @property {string} message - AI-generated response message or error message
+ * @property {boolean} success - Whether the request succeeded
+ * @property {string} [error] - Error details if success is false
+ */
 export interface ChatResponse {
   message: string;
   success: boolean;
@@ -29,7 +71,34 @@ export interface ChatResponse {
 }
 
 /**
- * Enviar mensaje a Gemini y obtener respuesta
+ * Sends a message to Google Gemini AI and returns the response.
+ *
+ * Constructs a full prompt including optional context and chat history,
+ * sends it to Gemini 1.5 Flash, and handles errors including quota exhaustion (429).
+ *
+ * Prompt structure:
+ * 1. Context (if provided)
+ * 2. Chat history (if provided)
+ * 3. Current user message
+ *
+ * Error handling:
+ * - 429 (quota exceeded): Returns user-friendly Spanish message with retry instructions
+ * - Other errors: Returns generic error message
+ *
+ * @param {string} message - User's message to send to Gemini
+ * @param {string} [context] - Optional system context/instructions for AI behavior
+ * @param {ChatMessage[]} [chatHistory] - Optional conversation history for context
+ * @returns {Promise<ChatResponse>} AI response with success status and error details if failed
+ *
+ * @example
+ * const response = await sendMessageToGemini(
+ *   "¿Cómo puedo ahorrar más dinero?",
+ *   "Eres FINCO, un coach financiero",
+ *   [{ role: 'user', content: 'Hola', timestamp: new Date() }]
+ * );
+ * if (response.success) {
+ *   console.log(response.message);
+ * }
  */
 export async function sendMessageToGemini(
   message: string,
@@ -92,7 +161,46 @@ export async function sendMessageToGemini(
 }
 
 /**
- * Función específica para el onboarding
+ * Specialized function for financial onboarding conversations.
+ *
+ * Injects comprehensive FINCO coaching persona and onboarding context into the prompt.
+ * Ensures structured 9-question flow for collecting user financial profile data.
+ *
+ * FINCO Persona:
+ * - Expert financial coach with empathetic, educational approach
+ * - Strict about following exact question sequence (1-9)
+ * - One question per message, no assumptions
+ * - Includes financial tips and motivational quotes
+ *
+ * Onboarding Questions (EXACT ORDER):
+ * 1. Full name
+ * 2. Age
+ * 3. Civil status
+ * 4. Children count
+ * 5. Monthly income
+ * 6. Monthly expenses
+ * 7. Total assets
+ * 8. Total liabilities
+ * 9. Total savings
+ *
+ * Message format enforced:
+ * 1. Acknowledge previous response (1-2 lines)
+ * 2. Optional financial tip (1 line)
+ * 3. Next question from sequence (1 line)
+ * 4. Optional motivational phrase (1 line)
+ *
+ * @param {string} message - User's onboarding response
+ * @param {Partial<OnboardingData> | {full_name?: string; email?: string}} userProfile - Current user profile data
+ * @param {ChatMessage[]} [chatHistory] - Conversation history to track progress
+ * @returns {Promise<ChatResponse>} AI response following onboarding rules
+ *
+ * @example
+ * const response = await sendOnboardingMessage(
+ *   "Me llamo Juan Pérez",
+ *   { full_name: "Juan Pérez", email: "juan@example.com" },
+ *   []
+ * );
+ * // Response will acknowledge name and ask question #2 (age)
  */
 export async function sendOnboardingMessage(
   message: string,
@@ -194,4 +302,10 @@ export async function sendOnboardingMessage(
   return sendMessageToGemini(message, onboardingContext, chatHistory);
 }
 
+/**
+ * Default export: Configured Gemini 1.5 Flash model instance.
+ * Use this for direct model access if custom generation config is needed.
+ *
+ * @default model
+ */
 export default model; 

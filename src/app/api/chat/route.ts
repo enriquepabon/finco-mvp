@@ -1,3 +1,12 @@
+/**
+ * Financial Onboarding Chat API
+ *
+ * Main API endpoint for FINCO's 9-question onboarding flow.
+ * Handles AI chat, response parsing, profile persistence, caching, and rate limiting.
+ *
+ * @module api/chat
+ */
+
 import { NextRequest, NextResponse } from 'next/server';
 import { sendOnboardingMessage, ChatMessage } from '../../../../lib/gemini/client';
 import { createClient } from '@supabase/supabase-js';
@@ -18,6 +27,53 @@ import { logger } from '../../../../lib/logger';
 import { ChatHistory, ChatRequest } from '../../../types/chat';
 import { OnboardingData } from '../../../types/onboarding';
 
+/**
+ * POST /api/chat
+ *
+ * Handles onboarding chat messages with AI-powered financial coaching.
+ *
+ * Flow:
+ * 1. Validates request body (message, chatHistory)
+ * 2. Authenticates user (via middleware)
+ * 3. Applies rate limiting (10 requests / 10 seconds)
+ * 4. Fetches user profile from Supabase
+ * 5. Determines question number based on chat history
+ * 6. Parses user response to structured data
+ * 7. Checks cache for AI response (if enabled)
+ * 8. Calls Gemini AI if cache miss
+ * 9. Caches successful AI response
+ * 10. Persists parsed data to user_profiles table
+ * 11. Marks onboarding complete after 9 questions
+ * 12. Returns AI response with rate limit headers
+ *
+ * Rate Limit: 10 requests per 10 seconds per user
+ * Cache TTL: 1 hour (if enabled)
+ * Auth: Required (enforced by middleware)
+ *
+ * @param {NextRequest} request - Next.js request with JSON body
+ * @returns {Promise<NextResponse>} AI response or error
+ *
+ * @example Request body:
+ * {
+ *   "message": "Me llamo Juan Pérez",
+ *   "chatHistory": [{ role: "assistant", content: "¿Cómo te llamas?" }],
+ *   "attachments": []
+ * }
+ *
+ * @example Success response (200):
+ * {
+ *   "message": "¡Perfecto Juan! ¿Cuántos años tienes?",
+ *   "success": true,
+ *   "debug": { questionNumber: 2, onboardingCompleted: false } // dev only
+ * }
+ *
+ * @example Rate limit error (429):
+ * {
+ *   "error": "Demasiadas solicitudes...",
+ *   "retryAfter": 10
+ * }
+ * Headers: X-RateLimit-Limit, X-RateLimit-Remaining, X-RateLimit-Reset
+ */
 export async function POST(request: NextRequest) {
   try {
     const { message, chatHistory = [], attachments = [] } = await request.json() as ChatRequest;
