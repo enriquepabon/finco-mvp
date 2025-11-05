@@ -1,15 +1,9 @@
 import type { NextConfig } from "next";
-import { env } from './lib/env';
 
 const nextConfig: NextConfig = {
   // Enable standalone output for Docker deployments
   // This creates a minimal Node.js server that can run independently
   output: 'standalone',
-
-  // Enable instrumentation for Sentry and other monitoring tools
-  experimental: {
-    instrumentationHook: true,
-  },
 
   // Optimize images for production
   images: {
@@ -23,13 +17,13 @@ const nextConfig: NextConfig = {
 
   // Headers CORS configurados por entorno
   async headers() {
-    const isDevelopment = env.NODE_ENV === 'development';
+    const isDevelopment = process.env.NODE_ENV === 'development';
 
     // En desarrollo: permitir localhost y variaciones
     // En producción: solo el dominio específico de la app
     const allowedOrigin = isDevelopment
       ? '*' // Más flexible en desarrollo local
-      : env.NEXT_PUBLIC_APP_URL;
+      : (process.env.NEXT_PUBLIC_APP_URL || 'http://localhost:3000');
 
     return [
       {
