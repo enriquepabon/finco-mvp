@@ -6,6 +6,7 @@ import { X, Send, User, MessageCircle, DollarSign, Target, TrendingUp, Bot, Arro
 import { useRouter } from 'next/navigation';
 import CashbeatLogo from '../ui/CashbeatLogo';
 import SpecializedChatInterface from './SpecializedChatInterface';
+import { useFocusTrap } from '@/hooks/useFocusTrap';
 
 interface ChatMessage {
   id: string;
@@ -64,6 +65,9 @@ export default function AdvancedChatModal({ isOpen, onClose }: AdvancedChatModal
   const [loading, setLoading] = useState(false);
   const messagesEndRef = useRef<HTMLDivElement>(null);
   const router = useRouter();
+
+  // Focus trap for accessibility
+  const focusTrapRef = useFocusTrap(isOpen);
 
   const scrollToBottom = () => {
     messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' });
@@ -177,11 +181,15 @@ export default function AdvancedChatModal({ isOpen, onClose }: AdvancedChatModal
           onClick={handleClose}
         >
           <motion.div
+            ref={focusTrapRef}
             initial={{ scale: 0.9, opacity: 0 }}
             animate={{ scale: 1, opacity: 1 }}
             exit={{ scale: 0.9, opacity: 0 }}
             onClick={(e) => e.stopPropagation()}
             className="bg-white/95 backdrop-blur-xl rounded-2xl shadow-2xl w-full max-w-md h-[600px] flex flex-col overflow-hidden border border-white/20"
+            role="dialog"
+            aria-modal="true"
+            aria-labelledby="modal-title"
           >
             {/* Header */}
             <div className="bg-gradient-to-r from-blue-500/10 to-purple-500/10 p-6 border-b border-gray-200/50">
@@ -191,12 +199,13 @@ export default function AdvancedChatModal({ isOpen, onClose }: AdvancedChatModal
                     <CashbeatLogo variant="chat" size="small" />
                   </div>
                   <div>
-                    <h3 className="font-bold text-gray-800">Cashbeat IA</h3>
+                    <h3 id="modal-title" className="font-bold text-gray-800">Cashbeat IA</h3>
                     <p className="text-sm text-gray-600">Tu asistente financiero</p>
                   </div>
                 </div>
                 <button
                   onClick={handleClose}
+                  aria-label="Cerrar modal"
                   className="w-8 h-8 rounded-full bg-gray-100 hover:bg-gray-200 flex items-center justify-center transition-colors"
                 >
                   <X size={16} />
@@ -324,18 +333,24 @@ export default function AdvancedChatModal({ isOpen, onClose }: AdvancedChatModal
                   {/* Input */}
                   <div className="p-4 border-t border-gray-200/50">
                     <div className="flex gap-2">
+                      <label htmlFor="modal-chat-input" className="sr-only">
+                        Escribe tu mensaje
+                      </label>
                       <input
+                        id="modal-chat-input"
                         type="text"
                         value={inputMessage}
                         onChange={(e) => setInputMessage(e.target.value)}
                         onKeyPress={(e) => e.key === 'Enter' && handleSendMessage()}
                         placeholder="Escribe tu mensaje..."
+                        aria-label="Escribe tu mensaje"
                         className="flex-1 px-4 py-2 rounded-full border border-gray-200 focus:outline-none focus:ring-2 focus:ring-blue-500/50 bg-white/80"
                         disabled={loading}
                       />
                       <button
                         onClick={handleSendMessage}
                         disabled={loading || !inputMessage.trim()}
+                        aria-label="Enviar mensaje"
                         className="w-10 h-10 bg-blue-500 hover:bg-blue-600 disabled:bg-gray-300 rounded-full flex items-center justify-center text-white transition-colors"
                       >
                         <Send size={16} />
