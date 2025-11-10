@@ -281,17 +281,18 @@ export async function POST(request: NextRequest) {
       {
         message: response.message,
         success: true,
-        // Debug info solo en desarrollo (NUNCA exponer parsedData - contiene datos financieros sensibles)
-        ...(env.NODE_ENV === 'development' && {
-          debug: {
-            questionNumber,
+        // Información de progreso (necesaria para el frontend)
+        debug: {
+          questionNumber,
+          onboardingCompleted,
+          // Info adicional solo en desarrollo
+          ...(env.NODE_ENV === 'development' && {
             profileExists: !!profile,
             userMessages,
             totalMessages: chatHistory.length,
-            onboardingCompleted,
             analyzedWithAI: userMessages >= 8
-          }
-        })
+          })
+        }
       },
       {
         headers: rateLimitHeaders,
