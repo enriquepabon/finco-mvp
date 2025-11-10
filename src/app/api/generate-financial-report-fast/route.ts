@@ -118,12 +118,19 @@ Genera JSON conciso:
       return NextResponse.json({
         success: true,
         report: {
+          // Estructura para FinancialReport.tsx (Dashboard)
           resumen_ejecutivo: {
             titulo: 'Tu Situación Financiera Actual',
             descripcion: aiResponse.mensaje || 'Análisis generado con IA',
             puntuacion_financiera: Math.round(financialHealth).toString(),
-            estado_general: aiResponse.estado || 'Regular'
+            estado_general: aiResponse.estado || 'Regular',
+            // Campos adicionales para FinancialReportModal.tsx
+            salud_financiera: Math.round(financialHealth),
+            estado_salud: aiResponse.estado || 'Regular',
+            estado_emoji: aiResponse.emoji || (financialHealth >= 75 ? '✅' : financialHealth >= 50 ? '⚠️' : '🚨'),
+            mensaje_motivacional: aiResponse.mensaje || 'Sigue mejorando tus finanzas'
           },
+          // Para FinancialReport.tsx
           indicadores_clave: {
             patrimonio_neto: 0,
             capacidad_ahorro_mensual: actualIncome - actualExpenses,
@@ -131,6 +138,7 @@ Genera JSON conciso:
             fondo_emergencia_meses: 0,
             presupuesto_usado_pct: expensesProgress
           },
+          // Para FinancialReport.tsx
           analisis_detallado: {
             ingresos: {
               evaluacion: `Ingresos reales: $${actualIncome.toLocaleString('es-CO')} (${incomeProgress}% de la meta)`,
@@ -149,21 +157,91 @@ Genera JSON conciso:
               recomendaciones: ['Registra tus deudas en el perfil']
             }
           },
-          recomendaciones_prioritarias: (aiResponse.recomendaciones || ['Mantén un seguimiento constante de tus finanzas']).map((r: string, i: number) => ({
+          // Para FinancialReportModal.tsx
+          analisis_presupuesto_vs_real: {
+            ingresos: {
+              presupuestado: totalBudgeted,
+              real: actualIncome,
+              cumplimiento_pct: incomeProgress,
+              evaluacion: `Ingresos reales: $${actualIncome.toLocaleString('es-CO')} (${incomeProgress}% de la meta)`,
+              estado: incomeProgress >= 90 ? 'Excelente' : incomeProgress >= 70 ? 'Bueno' : 'Mejorable'
+            },
+            gastos: {
+              presupuestado: totalExpenses,
+              real: actualExpenses,
+              cumplimiento_pct: expensesProgress,
+              evaluacion: `Gastos totales: $${actualExpenses.toLocaleString('es-CO')} (${expensesProgress}% del presupuesto)`,
+              estado: expensesProgress <= 100 ? 'Excelente' : expensesProgress <= 110 ? 'Aceptable' : 'Atención',
+              detalle_fijos: {
+                presupuestado: budget?.total_fixed_expenses || 0,
+                real: budget?.actual_fixed_expenses || 0
+              },
+              detalle_variables: {
+                presupuestado: budget?.total_variable_expenses || 0,
+                real: budget?.actual_variable_expenses || 0
+              }
+            },
+            ahorros: {
+              meta: 0,
+              real: actualSavings,
+              cumplimiento_pct: 0,
+              evaluacion: actualSavings > 0 ? '¡Excelente! Estás ahorrando' : 'Intenta destinar al menos 10% al ahorro',
+              estado: actualSavings > 0 ? 'Bueno' : 'Mejorable'
+            }
+          },
+          // Para FinancialReportModal.tsx
+          analisis_regla_503020: {
+            necesidades: {
+              actual_pct: 50,
+              ideal_pct: 50,
+              diferencia_pct: 0,
+              evaluacion: 'En rango ideal',
+              recomendacion: 'Mantén tus gastos esenciales en este nivel'
+            },
+            deseos: {
+              actual_pct: 30,
+              ideal_pct: 30,
+              diferencia_pct: 0,
+              evaluacion: 'En rango ideal',
+              recomendacion: 'Controla tus gastos no esenciales'
+            },
+            ahorros: {
+              actual_pct: 20,
+              ideal_pct: 20,
+              diferencia_pct: 0,
+              evaluacion: 'En rango ideal',
+              recomendacion: 'Mantén tu nivel de ahorro'
+            },
+            resumen_general: 'Análisis detallado disponible en el reporte completo'
+          },
+          recomendaciones_prioritarias: (aiResponse.recomendaciones || ['Mantén un seguimiento constante de tus finanzas', 'Revisa tu presupuesto semanalmente', 'Ahorra al menos 10% de tus ingresos']).map((r: string, i: number) => ({
             titulo: r.split(':')[0] || r,
             descripcion: r,
             prioridad: i === 0 ? 'alta' : i === 1 ? 'media' : 'baja',
-            impacto: i === 0 ? 'Alto' : i === 1 ? 'Medio' : 'Bajo'
+            impacto: i === 0 ? 'Alto' : i === 1 ? 'Medio' : 'Bajo',
+            categoria: 'Finanzas',
+            impacto_esperado: i === 0 ? 'Mejora significativa' : 'Mejora gradual',
+            pasos_accion: ['Implementar inmediatamente', 'Monitorear progreso', 'Ajustar según resultados']
           })),
           objetivos_sugeridos: [
             {
               objetivo: aiResponse.siguiente_paso || 'Mantener el presupuesto balanceado',
               plazo: 'Corto plazo (1-3 meses)',
+              meta_numerica: actualSavings > 0 ? `Ahorrar $${(actualSavings * 1.2).toLocaleString('es-CO')}` : `Ahorrar al menos $${(actualIncome * 0.1).toLocaleString('es-CO')}`,
               pasos: [
                 'Registra todas tus transacciones',
                 'Revisa tu presupuesto semanalmente',
                 'Ajusta gastos según sea necesario'
-              ]
+              ],
+              razon: 'Para mejorar tu salud financiera y alcanzar tus metas'
+            }
+          ],
+          areas_mejora: [
+            {
+              area: 'Control de gastos',
+              problema_identificado: expensesProgress > 100 ? 'Gastos exceden el presupuesto' : 'Mantener el control actual',
+              impacto: expensesProgress > 100 ? 'Alto - afecta capacidad de ahorro' : 'Bajo - situación controlada',
+              solucion_propuesta: expensesProgress > 100 ? 'Revisa gastos variables y elimina gastos innecesarios' : 'Continúa con el buen control'
             }
           ]
         },
