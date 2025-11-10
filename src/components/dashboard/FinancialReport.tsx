@@ -126,16 +126,26 @@ export default function FinancialReport({ className = '' }: FinancialReportProps
         throw new Error('No hay sesión activa');
       }
 
-      // Obtener el presupuesto activo del usuario
-      const { data: budgets, error: budgetError } = await supabase
+      // Obtener el presupuesto activo del usuario con timeout
+      const budgetPromise = supabase
         .from('budgets')
         .select('id')
         .eq('user_id', session.user.id)
         .order('created_at', { ascending: false })
         .limit(1);
 
+      // Timeout de 5 segundos para la consulta del presupuesto
+      const timeoutPromise = new Promise((_, reject) => 
+        setTimeout(() => reject(new Error('Timeout obteniendo presupuesto')), 5000)
+      );
+
+      const { data: budgets, error: budgetError } = await Promise.race([
+        budgetPromise,
+        timeoutPromise
+      ]) as any;
+
       if (budgetError || !budgets || budgets.length === 0) {
-        throw new Error('No se encontró un presupuesto activo');
+        throw new Error('No se encontró un presupuesto activo. Crea un presupuesto primero desde la sección de Presupuesto.');
       }
 
       const budgetId = budgets[0].id;
