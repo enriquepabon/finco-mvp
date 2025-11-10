@@ -3,11 +3,12 @@
 /**
  * Componente para mostrar la lista detallada de transacciones
  * Muestra el detalle específico de cada transacción en subcategorías
+ * Permite eliminar transacciones individuales
  * MentorIA - Sistema de Registro de Transacciones
  */
 
 import { useState, useEffect } from 'react';
-import { X, ChevronDown, ChevronRight, FileText, Calendar, DollarSign } from 'lucide-react';
+import { X, ChevronDown, ChevronRight, FileText, Calendar, DollarSign, Trash2, AlertCircle, CheckCircle } from 'lucide-react';
 import { createClient } from '@supabase/supabase-js';
 import type { Transaction } from '@/types/transaction';
 
@@ -33,6 +34,9 @@ export default function TransactionListModal({
   const [transactions, setTransactions] = useState<TransactionWithDetails[]>([]);
   const [loading, setLoading] = useState(true);
   const [expandedTransactions, setExpandedTransactions] = useState<Set<string>>(new Set());
+  const [deletingId, setDeletingId] = useState<string | null>(null);
+  const [error, setError] = useState('');
+  const [successMessage, setSuccessMessage] = useState('');
 
   const supabase = createClient(
     process.env.NEXT_PUBLIC_SUPABASE_URL!,
@@ -47,15 +51,18 @@ export default function TransactionListModal({
 
   const loadTransactions = async () => {
     setLoading(true);
+    setError('');
     try {
-      const { data, error } = await supabase
-        .from('budget_transactions')
+      // Buscar en la tabla correcta de transacciones
+      const { data, error: fetchError } = await supabase
+        .from('transactions')
         .select('*')
         .eq('subcategory_id', subcategoryId)
         .order('transaction_date', { ascending: false });
 
-      if (error) {
-        console.error('Error loading transactions:', error);
+      if (fetchError) {
+        console.error('Error loading transactions:', fetchError);
+        setError('Error al cargar las transacciones');
       } else {
         // Formatear fechas
         const formatted = data.map(t => ({
@@ -67,11 +74,51 @@ export default function TransactionListModal({
           })
         }));
         setTransactions(formatted);
+        console.log('✅ Transacciones cargadas:', formatted.length);
       }
     } catch (err) {
       console.error('Error:', err);
+      setError('Error al cargar las transacciones');
     } finally {
       setLoading(false);
+    }
+  };
+
+  const handleDeleteTransaction = async (transactionId: string) => {
+    if (!confirm('¿Estás seguro de eliminar esta transacción? Esta acción no se puede deshacer.')) {
+      return;
+    }
+
+    try {
+      setDeletingId(transactionId);
+      setError('');
+      setSuccessMessage('');
+
+      console.log('🗑️ Eliminando transacción:', transactionId);
+
+      const response = await fetch(`/api/transactions/${transactionId}`, {
+        method: 'DELETE',
+      });
+
+      if (!response.ok) {
+        const errorData = await response.json();
+        throw new Error(errorData.error || 'Error al eliminar la transacción');
+      }
+
+      console.log('✅ Transacción eliminada exitosamente');
+
+      // Actualizar la lista local
+      setTransactions(prev => prev.filter(t => t.id !== transactionId));
+
+      // Mostrar mensaje de éxito
+      setSuccessMessage('Transacción eliminada exitosamente');
+      setTimeout(() => setSuccessMessage(''), 3000);
+
+    } catch (err) {
+      console.error('❌ Error eliminando transacción:', err);
+      setError(err instanceof Error ? err.message : 'Error desconocido');
+    } finally {
+      setDeletingId(null);
     }
   };
 
@@ -121,6 +168,22 @@ export default function TransactionListModal({
 
         {/* Body */}
         <div className="flex-1 overflow-y-auto p-6">
+          {/* Error */}
+          {error && (
+            <div className="mb-4 bg-red-50 border border-red-200 text-red-700 px-4 py-3 rounded-lg flex items-start gap-3">
+              <AlertCircle className="w-5 h-5 flex-shrink-0 mt-0.5" />
+              <span>{error}</span>
+            </div>
+          )}
+
+          {/* Success */}
+          {successMessage && (
+            <div className="mb-4 bg-green-50 border border-green-200 text-green-700 px-4 py-3 rounded-lg flex items-start gap-3">
+              <CheckCircle className="w-5 h-5 flex-shrink-0 mt-0.5" />
+              <span>{successMessage}</span>
+            </div>
+          )}
+
           {loading ? (
             <div className="text-center py-8">
               <div className="inline-block w-8 h-8 border-4 border-purple-600 border-t-transparent rounded-full animate-spin" />
@@ -144,18 +207,20 @@ export default function TransactionListModal({
                   >
                     {/* Main Row */}
                     <div
-                      className="p-4 flex items-center gap-4 cursor-pointer hover:bg-purple-100/30 transition-colors"
-                      onClick={() => hasDetail && toggleExpanded(transaction.id)}
+                      className="p-4 flex items-center gap-4"
                     >
                       {/* Icono expandir (solo si tiene detalle) */}
                       {hasDetail && (
-                        <div className="flex-shrink-0">
+                        <button
+                          onClick={() => toggleExpanded(transaction.id)}
+                          className="flex-shrink-0 p-1 hover:bg-purple-100 rounded transition-colors"
+                        >
                           {isExpanded ? (
                             <ChevronDown className="w-5 h-5 text-purple-600" />
                           ) : (
                             <ChevronRight className="w-5 h-5 text-purple-600" />
                           )}
-                        </div>
+                        </button>
                       )}
 
                       {/* Fecha */}
@@ -186,6 +251,20 @@ export default function TransactionListModal({
                           ${Number(transaction.amount).toLocaleString('es-CO')}
                         </span>
                       </div>
+
+                      {/* Botón eliminar */}
+                      <button
+                        onClick={() => handleDeleteTransaction(transaction.id)}
+                        disabled={deletingId === transaction.id}
+                        className="flex-shrink-0 p-2 text-red-600 hover:bg-red-50 rounded-lg transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+                        title="Eliminar transacción"
+                      >
+                        {deletingId === transaction.id ? (
+                          <div className="w-5 h-5 border-2 border-red-600 border-t-transparent rounded-full animate-spin"></div>
+                        ) : (
+                          <Trash2 className="w-5 h-5" />
+                        )}
+                      </button>
                     </div>
 
                     {/* Detalle expandido */}
