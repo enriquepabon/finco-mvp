@@ -126,12 +126,27 @@ export default function FinancialReport({ className = '' }: FinancialReportProps
         throw new Error('No hay sesión activa');
       }
 
+      // Obtener el presupuesto activo del usuario
+      const { data: budgets, error: budgetError } = await supabase
+        .from('budgets')
+        .select('id')
+        .eq('user_id', session.user.id)
+        .order('created_at', { ascending: false })
+        .limit(1);
+
+      if (budgetError || !budgets || budgets.length === 0) {
+        throw new Error('No se encontró un presupuesto activo');
+      }
+
+      const budgetId = budgets[0].id;
+
       const response = await fetch('/api/generate-financial-report-fast', {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
           'Authorization': `Bearer ${session.access_token}`,
         },
+        body: JSON.stringify({ budgetId })
       });
 
       if (!response.ok) {
