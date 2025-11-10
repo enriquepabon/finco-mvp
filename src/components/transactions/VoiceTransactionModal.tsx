@@ -186,7 +186,25 @@ export default function VoiceTransactionModal({
           } else if (event.error === 'audio-capture') {
             errorMessage = '🎙️ No se puede acceder al micrófono. Verifica que esté conectado y funcione correctamente.';
           } else if (event.error === 'network') {
-            errorMessage = '📡 Error de conexión. Verifica tu internet e intenta de nuevo.';
+            errorMessage = '📡 Error de conexión al servicio de reconocimiento.\n\n🔄 Reintentando automáticamente...\n\nSi persiste:\n- Verifica tu conexión a internet\n- Intenta recargar la página\n- Usa Chrome o Edge (recomendados)';
+            
+            // Auto-retry después de 2 segundos para errores de red
+            setError(errorMessage);
+            setTimeout(() => {
+              console.log('🔄 Reintentando reconocimiento de voz después de error de red...');
+              setError('');
+              if (recognitionRef.current && !isRecording) {
+                setIsRecording(true);
+                try {
+                  recognitionRef.current.start();
+                } catch (e) {
+                  console.error('❌ Error en retry:', e);
+                  setError('No se pudo reintentar. Intenta de nuevo manualmente.');
+                  setIsRecording(false);
+                }
+              }
+            }, 2000);
+            return; // No marcar como no grabando todavía, el retry lo hará
           } else if (event.error === 'service-not-allowed') {
             errorMessage = '⚠️ Servicio de reconocimiento de voz no disponible. Intenta usar otro navegador (Chrome o Edge recomendados).';
           }
