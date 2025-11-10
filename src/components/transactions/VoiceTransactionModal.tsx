@@ -220,34 +220,62 @@ export default function VoiceTransactionModal({
     setIsRecording(true);
     
     try {
-      // Primero intentar acceder al micrófono explícitamente con getUserMedia
-      // Esto fuerza al navegador a mostrar el prompt de permisos
-      navigator.mediaDevices.getUserMedia({ audio: true })
-        .then((stream) => {
-          // Detener el stream inmediatamente, solo lo necesitábamos para solicitar permisos
-          stream.getTracks().forEach(track => track.stop());
-          
-          // Ahora sí iniciar el reconocimiento de voz
-          console.log('✅ Permisos de micrófono concedidos, iniciando reconocimiento...');
-          recognitionRef.current?.start();
-        })
-        .catch((err) => {
-          console.error('❌ Error solicitando permisos de micrófono:', err);
-          setIsRecording(false);
-          
-          if (err.name === 'NotAllowedError' || err.name === 'PermissionDeniedError') {
-            setError('🎤 Permisos de micrófono denegados.\n\nPasos para solucionarlo:\n\n1. Recarga la página completamente (F5 o Ctrl+R)\n2. Cuando aparezca el popup, selecciona "Permitir"\n3. Si no aparece popup, revisa el ícono 🔒 en la barra de dirección\n4. En "Permisos del sitio" → Micrófono → Permitir\n5. Recarga la página de nuevo');
-          } else if (err.name === 'NotFoundError') {
-            setError('🎙️ No se detectó ningún micrófono. Verifica que esté conectado correctamente.');
-          } else {
-            setError(`❌ Error: ${err.message}`);
-          }
-        });
+      // Verificar primero si los permisos ya fueron concedidos
+      if (navigator.permissions && navigator.permissions.query) {
+        navigator.permissions.query({ name: 'microphone' as PermissionName })
+          .then((permissionStatus) => {
+            console.log('📍 Estado de permisos de micrófono:', permissionStatus.state);
+            
+            if (permissionStatus.state === 'denied') {
+              setIsRecording(false);
+              setError('🚫 Los permisos de micrófono están BLOQUEADOS en tu navegador.\n\n⚠️ SOLUCIÓN:\n\n1. Cierra esta ventana\n2. Click en el ícono 🔒 junto a la URL (arriba izquierda)\n3. Busca "Micrófono" en permisos\n4. Cámbialo de "Bloquear" a "Permitir"\n5. IMPORTANTE: Cierra completamente el navegador\n6. Abre de nuevo onzaai.com\n7. Intenta grabar de nuevo');
+              return;
+            }
+            
+            // Si está en granted o prompt, intentar acceso
+            attemptMicrophoneAccess();
+          })
+          .catch((err) => {
+            console.warn('⚠️ No se pudo verificar permisos:', err);
+            // Si falla la verificación, intentar acceso directo
+            attemptMicrophoneAccess();
+          });
+      } else {
+        // Navegador no soporta Permissions API, intentar acceso directo
+        attemptMicrophoneAccess();
+      }
     } catch (err) {
       console.error('Error starting recognition:', err);
       setError('Error al iniciar grabación');
       setIsRecording(false);
     }
+  };
+
+  const attemptMicrophoneAccess = () => {
+    // Primero intentar acceder al micrófono explícitamente con getUserMedia
+    navigator.mediaDevices.getUserMedia({ audio: true })
+      .then((stream) => {
+        // Detener el stream inmediatamente, solo lo necesitábamos para solicitar permisos
+        stream.getTracks().forEach(track => track.stop());
+        
+        // Ahora sí iniciar el reconocimiento de voz
+        console.log('✅ Permisos de micrófono concedidos, iniciando reconocimiento...');
+        recognitionRef.current?.start();
+      })
+      .catch((err) => {
+        console.error('❌ Error solicitando permisos de micrófono:', err);
+        setIsRecording(false);
+        
+        if (err.name === 'NotAllowedError' || err.name === 'PermissionDeniedError') {
+          setError('🚫 Permisos denegados.\n\n📱 INSTRUCCIONES POR DISPOSITIVO:\n\n💻 Windows/Mac Chrome:\n1. Click 🔒 en barra URL → Configuración del sitio\n2. Micrófono → Permitir\n3. Ctrl+Shift+R (recargar)\n\n📱 iPhone Safari:\n1. Ajustes → Safari → onzaai.com\n2. Micrófono → Permitir\n3. Cierra Safari completamente y vuelve a abrir\n\n📱 Android Chrome:\n1. Menú (⋮) → Información del sitio\n2. Permisos → Micrófono → Permitir\n3. Recargar página');
+        } else if (err.name === 'NotFoundError') {
+          setError('🎙️ No se detectó ningún micrófono. Verifica que esté conectado correctamente.');
+        } else if (err.name === 'NotReadableError') {
+          setError('🔴 El micrófono está en uso por otra aplicación. Cierra otras apps que usen el micrófono (Zoom, Teams, etc.)');
+        } else {
+          setError(`❌ Error: ${err.message}\n\nIntenta:\n1. Cerrar otras apps que usen el micrófono\n2. Reiniciar el navegador\n3. Usar Chrome o Edge (recomendado)`);
+        }
+      });
   };
 
   const stopRecording = () => {
