@@ -4,11 +4,11 @@ import { useState, useEffect, useRef } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { Send, Sparkles, MessageCircle, CheckCircle, User, ArrowLeft } from 'lucide-react';
 import { useRouter } from 'next/navigation';
-import { supabase } from '../../../lib/supabase/client';
+import { supabase } from '@/lib/supabase/client';
 import CashbeatLogo from '../ui/CashbeatLogo';
 import VoiceRecorder from './VoiceRecorder';
 import DocumentUploader from './DocumentUploader';
-import { formatCashbeatMessage } from '../../lib/utils/chat-utils';
+import { formatCashbeatMessage } from '@/lib/utils/chat-utils';
 import { useChatSubmit } from '../../hooks/useChatSubmit';
 import { ChatMessage } from '../../types/chat';
 
@@ -58,11 +58,21 @@ export default function ProfileEditChatInterface({ onBack, className = '', actio
   // Get user and profile
   useEffect(() => {
     const getUser = async () => {
+      console.log('🔍 Obteniendo usuario y sesión...');
       const { data: { user }, error } = await supabase.auth.getUser();
       const { data: { session } } = await supabase.auth.getSession();
 
+      console.log('👤 Usuario obtenido:', user?.email);
+      console.log('🎫 Session token:', session?.access_token ? 'Disponible (' + session.access_token.substring(0, 20) + '...)' : 'NO DISPONIBLE');
+
       setUser(user);
       setUserToken(session?.access_token || '');
+
+      if (!session?.access_token) {
+        console.error('❌ PROBLEMA: No se pudo obtener el access_token de la sesión');
+        setError('Error de autenticación. Por favor, recarga la página o inicia sesión nuevamente.');
+        return;
+      }
 
       if (user) {
         const { data: profile } = await supabase
@@ -72,6 +82,7 @@ export default function ProfileEditChatInterface({ onBack, className = '', actio
           .single();
 
         if (profile) {
+          console.log('✅ Perfil cargado para:', profile.full_name);
           setCurrentProfile(profile);
           setMessages([{
             role: 'assistant',
@@ -115,6 +126,15 @@ export default function ProfileEditChatInterface({ onBack, className = '', actio
       return;
     }
 
+    // Verificar que tenemos el token
+    if (!userToken) {
+      console.error('❌ No hay userToken disponible');
+      setError('Error: Token de autenticación no disponible. Por favor, recarga la página.');
+      return;
+    }
+
+    console.log('🔐 Enviando request con token:', userToken.substring(0, 20) + '...');
+
     const userMessage: ChatMessage = {
       role: 'user',
       content: finalMessage,
@@ -145,15 +165,16 @@ export default function ProfileEditChatInterface({ onBack, className = '', actio
 
       const response = await fetch('/api/profile-edit-chat', {
         method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
+        headers: { 
+          'Content-Type': 'application/json',
+          'Authorization': `Bearer ${userToken}`
+        },
         body: JSON.stringify({
           message: fullContext,
           chatHistory: messages.map(msg => ({
             role: msg.role,
             content: msg.content
           })),
-          userToken: userToken,
-          currentProfile: currentProfile,
           attachments: attachments
         })
       });

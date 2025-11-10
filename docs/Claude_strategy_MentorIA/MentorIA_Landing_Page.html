@@ -1,0 +1,697 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>MentorIA - Tu mentor financiero personal</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+        
+        :root {
+            --primary-blue: #2E5BFF;
+            --success-green: #00C48C;
+            --text-dark: #2D3436;
+            --text-gray: #95A5A6;
+            --bg-light: #F8F9FA;
+            --warning: #FFB800;
+            --white: #FFFFFF;
+        }
+        
+        body {
+            font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+            line-height: 1.6;
+            color: var(--text-dark);
+            overflow-x: hidden;
+        }
+        
+        /* Navigation */
+        nav {
+            position: fixed;
+            top: 0;
+            width: 100%;
+            background: rgba(255, 255, 255, 0.95);
+            backdrop-filter: blur(10px);
+            z-index: 1000;
+            padding: 1rem 0;
+            box-shadow: 0 2px 10px rgba(0,0,0,0.05);
+        }
+        
+        .nav-container {
+            max-width: 1200px;
+            margin: 0 auto;
+            padding: 0 2rem;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+        
+        .logo {
+            font-size: 1.5rem;
+            font-weight: 700;
+            color: var(--primary-blue);
+        }
+        
+        .nav-links {
+            display: flex;
+            gap: 2rem;
+            align-items: center;
+        }
+        
+        .nav-links a {
+            text-decoration: none;
+            color: var(--text-dark);
+            font-weight: 500;
+            transition: color 0.3s;
+        }
+        
+        .nav-links a:hover {
+            color: var(--primary-blue);
+        }
+        
+        .cta-button {
+            background: var(--primary-blue);
+            color: white;
+            padding: 0.75rem 1.5rem;
+            border-radius: 8px;
+            text-decoration: none;
+            font-weight: 600;
+            transition: transform 0.3s, box-shadow 0.3s;
+        }
+        
+        .cta-button:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 10px 20px rgba(46, 91, 255, 0.3);
+        }
+        
+        /* Hero Section */
+        .hero {
+            margin-top: 80px;
+            padding: 4rem 2rem;
+            min-height: 80vh;
+            display: flex;
+            align-items: center;
+            background: linear-gradient(135deg, var(--bg-light) 0%, white 100%);
+        }
+        
+        .hero-container {
+            max-width: 1200px;
+            margin: 0 auto;
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 4rem;
+            align-items: center;
+        }
+        
+        .hero-content h1 {
+            font-size: 3.5rem;
+            line-height: 1.2;
+            margin-bottom: 1.5rem;
+            background: linear-gradient(135deg, var(--primary-blue), var(--success-green));
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+        }
+        
+        .hero-content p {
+            font-size: 1.25rem;
+            color: var(--text-gray);
+            margin-bottom: 2rem;
+        }
+        
+        .hero-buttons {
+            display: flex;
+            gap: 1rem;
+            margin-bottom: 3rem;
+        }
+        
+        .secondary-button {
+            background: white;
+            color: var(--primary-blue);
+            padding: 0.75rem 1.5rem;
+            border: 2px solid var(--primary-blue);
+            border-radius: 8px;
+            text-decoration: none;
+            font-weight: 600;
+            transition: all 0.3s;
+        }
+        
+        .secondary-button:hover {
+            background: var(--primary-blue);
+            color: white;
+        }
+        
+        .trust-badges {
+            display: flex;
+            gap: 2rem;
+            font-size: 0.9rem;
+            color: var(--text-gray);
+        }
+        
+        .badge {
+            display: flex;
+            align-items: center;
+            gap: 0.5rem;
+        }
+        
+        .badge-icon {
+            width: 20px;
+            height: 20px;
+            background: var(--success-green);
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            color: white;
+            font-size: 12px;
+        }
+        
+        .hero-visual {
+            position: relative;
+        }
+        
+        .phone-mockup {
+            width: 100%;
+            max-width: 400px;
+            height: 600px;
+            background: white;
+            border-radius: 30px;
+            box-shadow: 0 30px 60px rgba(0,0,0,0.1);
+            padding: 2rem;
+            position: relative;
+            overflow: hidden;
+        }
+        
+        .chat-bubble {
+            background: var(--bg-light);
+            padding: 1rem;
+            border-radius: 20px;
+            margin-bottom: 1rem;
+            animation: fadeInUp 1s ease-out;
+        }
+        
+        .chat-bubble.bot {
+            background: var(--primary-blue);
+            color: white;
+            margin-left: auto;
+            max-width: 80%;
+        }
+        
+        @keyframes fadeInUp {
+            from {
+                opacity: 0;
+                transform: translateY(20px);
+            }
+            to {
+                opacity: 1;
+                transform: translateY(0);
+            }
+        }
+        
+        /* Features Section */
+        .features {
+            padding: 5rem 2rem;
+            background: white;
+        }
+        
+        .features-container {
+            max-width: 1200px;
+            margin: 0 auto;
+        }
+        
+        .features h2 {
+            text-align: center;
+            font-size: 2.5rem;
+            margin-bottom: 1rem;
+        }
+        
+        .features-subtitle {
+            text-align: center;
+            color: var(--text-gray);
+            font-size: 1.25rem;
+            margin-bottom: 3rem;
+        }
+        
+        .features-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+            gap: 2rem;
+        }
+        
+        .feature-card {
+            padding: 2rem;
+            border-radius: 12px;
+            transition: transform 0.3s;
+        }
+        
+        .feature-card:hover {
+            transform: translateY(-5px);
+        }
+        
+        .feature-icon {
+            width: 60px;
+            height: 60px;
+            background: linear-gradient(135deg, var(--primary-blue), var(--success-green));
+            border-radius: 12px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            color: white;
+            font-size: 24px;
+            margin-bottom: 1rem;
+        }
+        
+        .feature-card h3 {
+            font-size: 1.25rem;
+            margin-bottom: 0.5rem;
+        }
+        
+        .feature-card p {
+            color: var(--text-gray);
+        }
+        
+        /* Process Section */
+        .process {
+            padding: 5rem 2rem;
+            background: var(--bg-light);
+        }
+        
+        .process-container {
+            max-width: 1200px;
+            margin: 0 auto;
+        }
+        
+        .process h2 {
+            text-align: center;
+            font-size: 2.5rem;
+            margin-bottom: 3rem;
+        }
+        
+        .steps {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+            gap: 2rem;
+        }
+        
+        .step {
+            text-align: center;
+            position: relative;
+        }
+        
+        .step-number {
+            width: 60px;
+            height: 60px;
+            background: white;
+            border: 3px solid var(--primary-blue);
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 1.5rem;
+            font-weight: bold;
+            color: var(--primary-blue);
+            margin: 0 auto 1rem;
+        }
+        
+        .step h3 {
+            margin-bottom: 0.5rem;
+        }
+        
+        .step p {
+            color: var(--text-gray);
+        }
+        
+        /* Testimonials */
+        .testimonials {
+            padding: 5rem 2rem;
+            background: white;
+        }
+        
+        .testimonials-container {
+            max-width: 1200px;
+            margin: 0 auto;
+        }
+        
+        .testimonials h2 {
+            text-align: center;
+            font-size: 2.5rem;
+            margin-bottom: 3rem;
+        }
+        
+        .testimonials-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+            gap: 2rem;
+        }
+        
+        .testimonial {
+            background: var(--bg-light);
+            padding: 2rem;
+            border-radius: 12px;
+        }
+        
+        .stars {
+            color: var(--warning);
+            margin-bottom: 1rem;
+        }
+        
+        .testimonial-text {
+            font-style: italic;
+            margin-bottom: 1rem;
+            line-height: 1.8;
+        }
+        
+        .testimonial-author {
+            font-weight: 600;
+        }
+        
+        .testimonial-role {
+            color: var(--text-gray);
+            font-size: 0.9rem;
+        }
+        
+        /* CTA Section */
+        .cta-section {
+            padding: 5rem 2rem;
+            background: linear-gradient(135deg, var(--primary-blue), var(--success-green));
+            color: white;
+            text-align: center;
+        }
+        
+        .cta-container {
+            max-width: 600px;
+            margin: 0 auto;
+        }
+        
+        .cta-section h2 {
+            font-size: 2.5rem;
+            margin-bottom: 1rem;
+        }
+        
+        .cta-section p {
+            font-size: 1.25rem;
+            margin-bottom: 2rem;
+            opacity: 0.9;
+        }
+        
+        .cta-button-white {
+            background: white;
+            color: var(--primary-blue);
+            padding: 1rem 2rem;
+            border-radius: 8px;
+            text-decoration: none;
+            font-weight: 600;
+            display: inline-block;
+            transition: transform 0.3s;
+        }
+        
+        .cta-button-white:hover {
+            transform: scale(1.05);
+        }
+        
+        /* Footer */
+        footer {
+            background: var(--text-dark);
+            color: white;
+            padding: 3rem 2rem 1rem;
+        }
+        
+        .footer-container {
+            max-width: 1200px;
+            margin: 0 auto;
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+            gap: 2rem;
+            margin-bottom: 2rem;
+        }
+        
+        .footer-section h4 {
+            margin-bottom: 1rem;
+        }
+        
+        .footer-section a {
+            color: rgba(255, 255, 255, 0.8);
+            text-decoration: none;
+            display: block;
+            margin-bottom: 0.5rem;
+            transition: color 0.3s;
+        }
+        
+        .footer-section a:hover {
+            color: white;
+        }
+        
+        .footer-bottom {
+            text-align: center;
+            padding-top: 2rem;
+            border-top: 1px solid rgba(255, 255, 255, 0.1);
+            color: rgba(255, 255, 255, 0.6);
+        }
+        
+        /* Responsive */
+        @media (max-width: 768px) {
+            .hero-container {
+                grid-template-columns: 1fr;
+            }
+            
+            .hero-content h1 {
+                font-size: 2.5rem;
+            }
+            
+            .phone-mockup {
+                max-width: 300px;
+                margin: 0 auto;
+            }
+            
+            .nav-links {
+                display: none;
+            }
+        }
+    </style>
+</head>
+<body>
+    <!-- Navigation -->
+    <nav>
+        <div class="nav-container">
+            <div class="logo">MentorIA</div>
+            <div class="nav-links">
+                <a href="#features">Características</a>
+                <a href="#how">Cómo funciona</a>
+                <a href="#testimonials">Testimonios</a>
+                <a href="#" class="cta-button">Empezar gratis</a>
+            </div>
+        </div>
+    </nav>
+
+    <!-- Hero Section -->
+    <section class="hero">
+        <div class="hero-container">
+            <div class="hero-content">
+                <h1>Tu mentor financiero personal</h1>
+                <p>Transforma tu relación con el dinero. De la ansiedad a la claridad en solo 2 minutos.</p>
+                
+                <div class="hero-buttons">
+                    <a href="#" class="cta-button">Empezar ahora</a>
+                    <a href="#" class="secondary-button">Ver demo</a>
+                </div>
+                
+                <div class="trust-badges">
+                    <div class="badge">
+                        <span class="badge-icon">✓</span>
+                        <span>Setup en 2 min</span>
+                    </div>
+                    <div class="badge">
+                        <span class="badge-icon">✓</span>
+                        <span>Sin tarjeta de crédito</span>
+                    </div>
+                    <div class="badge">
+                        <span class="badge-icon">✓</span>
+                        <span>IA que te entiende</span>
+                    </div>
+                </div>
+            </div>
+            
+            <div class="hero-visual">
+                <div class="phone-mockup">
+                    <div class="chat-bubble">
+                        Hola 👋 Soy MentorIA. ¿Cómo te llamo?
+                    </div>
+                    <div class="chat-bubble bot">
+                        María
+                    </div>
+                    <div class="chat-bubble">
+                        Mucho gusto, María. Vamos a ordenar tus finanzas juntos. ¿Cuál es tu meta principal?
+                    </div>
+                    <div class="chat-bubble bot">
+                        Quiero ahorrar para emergencias
+                    </div>
+                    <div class="chat-bubble">
+                        Excelente decisión. Te ayudaré a crear un fondo de emergencia. Empecemos con 10% de tu ingreso...
+                    </div>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <!-- Features Section -->
+    <section class="features" id="features">
+        <div class="features-container">
+            <h2>Todo lo que necesitas, nada que no</h2>
+            <p class="features-subtitle">Diseñado para ser simple, efectivo y humano</p>
+            
+            <div class="features-grid">
+                <div class="feature-card">
+                    <div class="feature-icon">💬</div>
+                    <h3>IA Conversacional</h3>
+                    <p>Habla o escribe. Tu mentor te entiende en lenguaje natural, sin comandos complicados.</p>
+                </div>
+                
+                <div class="feature-card">
+                    <div class="feature-icon">🎯</div>
+                    <h3>Presupuesto Automático</h3>
+                    <p>Creamos tu presupuesto en segundos basado en tus respuestas. Sin hojas de cálculo.</p>
+                </div>
+                
+                <div class="feature-card">
+                    <div class="feature-icon">📊</div>
+                    <h3>Insights Accionables</h3>
+                    <p>No solo datos. Te decimos exactamente qué hacer para mejorar tus finanzas.</p>
+                </div>
+                
+                <div class="feature-card">
+                    <div class="feature-icon">🔄</div>
+                    <h3>Micro-hábitos</h3>
+                    <p>Cambios pequeños, impacto grande. Basado en ciencia del comportamiento.</p>
+                </div>
+                
+                <div class="feature-card">
+                    <div class="feature-icon">🔒</div>
+                    <h3>Privacidad Total</h3>
+                    <p>Tus datos son tuyos. Encriptación bancaria y transparencia completa.</p>
+                </div>
+                
+                <div class="feature-card">
+                    <div class="feature-icon">🏆</div>
+                    <h3>Gamificación Sutil</h3>
+                    <p>Logros y rachas que motivan sin presionar. Celebramos cada pequeño paso.</p>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <!-- Process Section -->
+    <section class="process" id="how">
+        <div class="process-container">
+            <h2>De cero a control en 4 pasos</h2>
+            
+            <div class="steps">
+                <div class="step">
+                    <div class="step-number">1</div>
+                    <h3>Conversa 2 minutos</h3>
+                    <p>Responde preguntas simples sobre tu situación actual</p>
+                </div>
+                
+                <div class="step">
+                    <div class="step-number">2</div>
+                    <h3>Recibe tu plan</h3>
+                    <p>Presupuesto personalizado y primera meta lista</p>
+                </div>
+                
+                <div class="step">
+                    <div class="step-number">3</div>
+                    <h3>Registra fácil</h3>
+                    <p>Gastos en segundos, por voz o texto</p>
+                </div>
+                
+                <div class="step">
+                    <div class="step-number">4</div>
+                    <h3>Mejora continua</h3>
+                    <p>Ajustes semanales y coaching constante</p>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <!-- Testimonials -->
+    <section class="testimonials" id="testimonials">
+        <div class="testimonials-container">
+            <h2>Historias reales de cambio</h2>
+            
+            <div class="testimonials-grid">
+                <div class="testimonial">
+                    <div class="stars">⭐⭐⭐⭐⭐</div>
+                    <p class="testimonial-text">"Por primera vez en mi vida tengo claro a dónde va mi dinero. MentorIA no me juzga, solo me ayuda."</p>
+                    <div class="testimonial-author">Ana García</div>
+                    <div class="testimonial-role">Diseñadora, 28 años</div>
+                </div>
+                
+                <div class="testimonial">
+                    <div class="stars">⭐⭐⭐⭐⭐</div>
+                    <p class="testimonial-text">"En 3 meses pagué mi tarjeta de crédito. La app me guió paso a paso sin hacerme sentir mal."</p>
+                    <div class="testimonial-author">Carlos Mendoza</div>
+                    <div class="testimonial-role">Profesor, 35 años</div>
+                </div>
+                
+                <div class="testimonial">
+                    <div class="stars">⭐⭐⭐⭐⭐</div>
+                    <p class="testimonial-text">"Como freelancer mis ingresos varían. MentorIA se adapta y me ayuda a mantener estabilidad."</p>
+                    <div class="testimonial-author">Laura Díaz</div>
+                    <div class="testimonial-role">Consultora, 31 años</div>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <!-- CTA Section -->
+    <section class="cta-section">
+        <div class="cta-container">
+            <h2>Tu futuro financiero empieza hoy</h2>
+            <p>Sin compromisos. Sin tarjeta. Solo 2 minutos.</p>
+            <a href="#" class="cta-button-white">Comenzar gratis ahora</a>
+        </div>
+    </section>
+
+    <!-- Footer -->
+    <footer>
+        <div class="footer-container">
+            <div class="footer-section">
+                <h4>Producto</h4>
+                <a href="#">Características</a>
+                <a href="#">Pricing</a>
+                <a href="#">Seguridad</a>
+                <a href="#">Roadmap</a>
+            </div>
+            
+            <div class="footer-section">
+                <h4>Compañía</h4>
+                <a href="#">Sobre nosotros</a>
+                <a href="#">Blog</a>
+                <a href="#">Carreras</a>
+                <a href="#">Prensa</a>
+            </div>
+            
+            <div class="footer-section">
+                <h4>Recursos</h4>
+                <a href="#">Centro de ayuda</a>
+                <a href="#">Guías</a>
+                <a href="#">API Docs</a>
+                <a href="#">Community</a>
+            </div>
+            
+            <div class="footer-section">
+                <h4>Legal</h4>
+                <a href="#">Privacidad</a>
+                <a href="#">Términos</a>
+                <a href="#">Cookies</a>
+                <a href="#">Licencias</a>
+            </div>
+        </div>
+        
+        <div class="footer-bottom">
+            <p>© 2024 MentorIA - Transformando la relación con el dinero, una conversación a la vez.</p>
+        </div>
+    </footer>
+</body>
+</html>

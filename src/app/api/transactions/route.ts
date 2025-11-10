@@ -1,5 +1,5 @@
 /**
- * API de Transacciones - FINCO
+ * API de Transacciones - MentorIA
  * POST: Crear nueva transacción
  * GET: Listar transacciones con filtros
  */
@@ -7,6 +7,7 @@
 import { createClient } from '@supabase/supabase-js';
 import { NextRequest, NextResponse } from 'next/server';
 import type { CreateTransactionInput, Transaction } from '@/types/transaction';
+import { trackHabit } from '@/lib/habits/tracker';
 
 const supabase = createClient(
   process.env.NEXT_PUBLIC_SUPABASE_URL!,
@@ -59,6 +60,27 @@ export async function POST(request: NextRequest) {
       );
     }
 
+    // 🔍 Validación: Si se especifica una categoría, verificar si tiene subcategorías
+    if (body.category_id && !body.subcategory_id) {
+      const { data: subcategories, error: subcatError } = await supabase
+        .from('budget_subcategories')
+        .select('id, name')
+        .eq('category_id', body.category_id)
+        .eq('is_active', true);
+
+      if (!subcatError && subcategories && subcategories.length > 0) {
+        // La categoría tiene subcategorías activas, debe elegir una
+        return NextResponse.json(
+          {
+            error: 'Esta categoría tiene subcategorías. Debes seleccionar una.',
+            requires_subcategory: true,
+            available_subcategories: subcategories
+          },
+          { status: 400 }
+        );
+      }
+    }
+
     // Crear transacción
     const transactionData = {
       budget_id: body.budget_id,
@@ -66,6 +88,7 @@ export async function POST(request: NextRequest) {
       subcategory_id: body.subcategory_id || null,
       user_id: budget.user_id,
       description: body.description,
+      detail: body.detail || null, // 🆕 Campo detail
       amount: body.amount,
       transaction_type: body.transaction_type,
       transaction_date: body.transaction_date || new Date().toISOString().split('T')[0],
@@ -102,6 +125,19 @@ export async function POST(request: NextRequest) {
 
     // Recalcular totales del presupuesto
     await recalculateBudgetTotals(body.budget_id);
+
+    // 🔥 Track habit: Usuario registró un gasto/ingreso
+    try {
+      await trackHabit(budget.user_id, 'daily_expense_log', {
+        transaction_id: transaction.id,
+        transaction_type: body.transaction_type,
+        amount: body.amount,
+      });
+      console.log('🎯 Habit tracked: daily_expense_log');
+    } catch (habitError) {
+      // No fallar la transacción si el tracking de hábito falla
+      console.error('⚠️ Error tracking habit (non-critical):', habitError);
+    }
 
     return NextResponse.json({ transaction }, { status: 201 });
 
@@ -193,40 +229,63 @@ export async function GET(request: NextRequest) {
 
 /**
  * Actualizar actual_amount de una categoría basado en sus transacciones
+ * 
+ * LÓGICA:
+ * 1. Si la transacción tiene subcategory_id → actualizar subcategoría
+ * 2. Actualizar la categoría sumando TODAS sus subcategorías (si existen)
+ * 3. Si la categoría NO tiene subcategorías → sumar transacciones directas
  */
 async function updateCategoryActualAmount(categoryId: string, subcategoryId?: string) {
   try {
-    // Si hay subcategoría, actualizar su actual_amount
+    // 1. Si hay subcategoría, actualizar su actual_amount
     if (subcategoryId) {
-      const { data: transactions } = await supabase
+      const { data: subTransactions } = await supabase
         .from('budget_transactions')
         .select('amount')
         .eq('subcategory_id', subcategoryId);
 
-      const totalAmount = transactions?.reduce((sum, t) => sum + parseFloat(t.amount.toString()), 0) || 0;
+      const subTotalAmount = subTransactions?.reduce((sum, t) => sum + parseFloat(t.amount.toString()), 0) || 0;
 
       await supabase
         .from('budget_subcategories')
-        .update({ actual_amount: totalAmount })
+        .update({ actual_amount: subTotalAmount })
         .eq('id', subcategoryId);
 
-      console.log(`✅ Updated subcategory ${subcategoryId} actual_amount: ${totalAmount}`);
+      console.log(`✅ Updated subcategory ${subcategoryId} actual_amount: ${subTotalAmount}`);
     }
 
-    // Actualizar actual_amount de la categoría
-    const { data: transactions } = await supabase
-      .from('budget_transactions')
-      .select('amount')
-      .eq('category_id', categoryId);
+    // 2. Verificar si la categoría tiene subcategorías
+    const { data: subcategories } = await supabase
+      .from('budget_subcategories')
+      .select('actual_amount')
+      .eq('category_id', categoryId)
+      .eq('is_active', true);
 
-    const totalAmount = transactions?.reduce((sum, t) => sum + parseFloat(t.amount.toString()), 0) || 0;
+    let categoryTotalAmount = 0;
 
+    if (subcategories && subcategories.length > 0) {
+      // La categoría tiene subcategorías: sumar los actual_amount de todas
+      categoryTotalAmount = subcategories.reduce((sum, sub) => sum + parseFloat(sub.actual_amount?.toString() || '0'), 0);
+      console.log(`📊 Category ${categoryId} total from ${subcategories.length} subcategories: ${categoryTotalAmount}`);
+    } else {
+      // La categoría NO tiene subcategorías: sumar transacciones directas
+      const { data: categoryTransactions } = await supabase
+        .from('budget_transactions')
+        .select('amount')
+        .eq('category_id', categoryId)
+        .is('subcategory_id', null); // Solo transacciones SIN subcategoría
+
+      categoryTotalAmount = categoryTransactions?.reduce((sum, t) => sum + parseFloat(t.amount.toString()), 0) || 0;
+      console.log(`📊 Category ${categoryId} total from direct transactions: ${categoryTotalAmount}`);
+    }
+
+    // 3. Actualizar actual_amount de la categoría
     await supabase
       .from('budget_categories')
-      .update({ actual_amount: totalAmount })
+      .update({ actual_amount: categoryTotalAmount })
       .eq('id', categoryId);
 
-    console.log(`✅ Updated category ${categoryId} actual_amount: ${totalAmount}`);
+    console.log(`✅ Updated category ${categoryId} actual_amount: ${categoryTotalAmount}`);
 
   } catch (error) {
     console.error('❌ Error updating category actual_amount:', error);

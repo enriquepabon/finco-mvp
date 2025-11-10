@@ -1,29 +1,29 @@
 /**
  * Financial Onboarding Chat API
  *
- * Main API endpoint for FINCO's 9-question onboarding flow.
+ * Main API endpoint for MentorIA's 9-question onboarding flow.
  * Handles AI chat, response parsing, profile persistence, caching, and rate limiting.
  *
  * @module api/chat
  */
 
 import { NextRequest, NextResponse } from 'next/server';
-import { sendOnboardingMessage, ChatMessage } from '../../../../lib/gemini/client';
+import { sendOnboardingMessage, analyzeOnboardingConversation, ChatMessage } from '@/lib/openai/client';
 import { createClient } from '@supabase/supabase-js';
-import { env, features } from '../../../../lib/env';
+import { env, features } from '@/lib/env';
 import {
   parseOnboardingResponse,
   logParsingResult,
   ParsedOnboardingData
-} from '../../../../lib/parsers/onboarding-parser';
-import { getCachedResponse, setCachedResponse } from '../../../../lib/cache/gemini-cache';
+} from '@/lib/parsers/onboarding-parser';
+import { getCachedResponse, setCachedResponse } from '@/lib/cache/gemini-cache';
 import {
   checkRateLimit,
   getIdentifier,
   createRateLimitHeaders,
   createRateLimitError,
-} from '../../../../lib/rate-limit';
-import { logger } from '../../../../lib/logger';
+} from '@/lib/rate-limit';
+import { logger } from '@/lib/logger';
 import { ChatHistory, ChatRequest } from '../../../types/chat';
 import { OnboardingData } from '../../../types/onboarding';
 
@@ -85,18 +85,28 @@ export async function POST(request: NextRequest) {
       );
     }
 
-    // Auth is now handled by middleware.ts
-    // Create Supabase client (middleware ensures user is authenticated)
+    // Obtener token de autorización del header
+    const authHeader = request.headers.get('authorization');
+    if (!authHeader) {
+      return NextResponse.json(
+        { error: 'Token de autorización requerido' },
+        { status: 401 }
+      );
+    }
+
+    const token = authHeader.replace('Bearer ', '');
+    
+    // Create Supabase client with service role to validate token
     const supabase = createClient(
       env.NEXT_PUBLIC_SUPABASE_URL,
-      env.NEXT_PUBLIC_SUPABASE_ANON_KEY
+      env.SUPABASE_SERVICE_ROLE_KEY
     );
 
-    // Get authenticated user (guaranteed by middleware)
-    const { data: { user } } = await supabase.auth.getUser();
+    // Get authenticated user using the token
+    const { data: { user }, error: authError } = await supabase.auth.getUser(token);
 
-    if (!user) {
-      // This should never happen due to middleware, but keep as safety
+    if (authError || !user) {
+      console.error('❌ Error de autenticación:', authError);
       return NextResponse.json(
         { error: 'Usuario no autenticado' },
         { status: 401 }
@@ -137,14 +147,16 @@ export async function POST(request: NextRequest) {
     
     console.log('🤖 Chat API - Usuario:', user.email, 'Pregunta #:', questionNumber, 'Historial:', chatHistory.length, 'Mensajes usuario:', userMessages, 'Mensaje:', message.substring(0, 50) + '...');
 
-    // Parsear la respuesta del usuario si es una respuesta (no el mensaje inicial)
+    // ⚠️ NOTA: El parseo incremental está DESACTIVADO
+    // Solo se usa el análisis de IA al final (mensaje 8+)
+    // Esto evita que datos parciales incorrectos sobreescriban los datos correctos
     let parsedData: Partial<ParsedOnboardingData> = {};
-    if (userMessages > 0 && questionNumber <= 9) {
-      // Parsear basado en la pregunta que ACABAMOS de responder
-      const currentAnswerQuestion = userMessages;
-      parsedData = parseOnboardingResponse(currentAnswerQuestion, message);
-      logParsingResult(currentAnswerQuestion, message, parsedData);
-    }
+    // Comentado: No parsear durante la conversación
+    // if (userMessages > 0 && questionNumber <= 9) {
+    //   const currentAnswerQuestion = userMessages;
+    //   parsedData = parseOnboardingResponse(currentAnswerQuestion, message);
+    //   logParsingResult(currentAnswerQuestion, message, parsedData);
+    // }
 
     // Try to get cached response first (if caching is enabled)
     const cacheContext = {
@@ -195,36 +207,71 @@ export async function POST(request: NextRequest) {
       });
     }
 
-    // Guardar/actualizar datos parseados si hay información válida
-    if (Object.keys(parsedData).length > 0) {
+    // 🎯 Si el onboarding está completo (8+ mensajes del usuario), usar IA para analizar TODA la conversación
+    let finalProfileData: Partial<OnboardingData> = {};
+    let onboardingCompleted = false;
+
+    if (userMessages >= 8) {
+      console.log('✅ Onboarding completado - Analizando toda la conversación con IA...');
+      
       try {
-        const dataToUpdate: Partial<OnboardingData> & { user_id: string } = {
-          user_id: user.id,
-          ...parsedData,
-          updated_at: new Date().toISOString()
-        };
+        // 🤖 Usar GPT-4o-mini para analizar toda la conversación
+        const analysisResult = await analyzeOnboardingConversation(
+          chatHistory as ChatMessage[],
+          { full_name: profile?.full_name, email: user.email }
+        );
 
-        // Si hemos completado todas las 9 preguntas, marcar onboarding como completado
-        if (userMessages >= 8) { // 8 mensajes del usuario = 9 preguntas respondidas (incluyendo la inicial)
-          dataToUpdate.onboarding_completed = true;
-          console.log('🎉 ONBOARDING COMPLETADO - Marcando como finalizado');
-        }
+        if (analysisResult.success && analysisResult.data) {
+          console.log('✅ Datos extraídos por IA:', analysisResult.data);
+          
+          // Validar civil_status (debe estar en español según prompt)
+          // BD acepta: 'soltero', 'casado', 'divorciado', 'viudo'
+          let sanitizedData = { ...analysisResult.data };
+          if (sanitizedData.civil_status) {
+            const validStatuses = ['soltero', 'casado', 'divorciado', 'viudo'];
+            if (!validStatuses.includes(sanitizedData.civil_status)) {
+              console.log(`⚠️ civil_status no válido: "${sanitizedData.civil_status}", omitiendo campo`);
+              delete sanitizedData.civil_status;
+            }
+          }
+          
+          finalProfileData = sanitizedData;
+          onboardingCompleted = true;
 
-        const { error: upsertError } = await supabase
-          .from('user_profiles')
-          .upsert(dataToUpdate, {
-            onConflict: 'user_id'
-          });
+          // Guardar perfil completo
+          const dataToUpdate: Partial<OnboardingData> & { user_id: string } = {
+            user_id: user.id,
+            ...finalProfileData,
+            onboarding_completed: true,
+            updated_at: new Date().toISOString()
+          };
 
-        if (upsertError) {
-          console.error('❌ Error guardando perfil:', upsertError);
+          const { error: upsertError } = await supabase
+            .from('user_profiles')
+            .upsert(dataToUpdate, {
+              onConflict: 'user_id'
+            });
+
+          if (upsertError) {
+            console.error('❌ Error guardando perfil:', upsertError);
+          } else {
+            console.log('🎉 Perfil completo guardado exitosamente!');
+          }
         } else {
-          console.log('✅ Perfil actualizado:', { user_id: user.id, questionNumber, parsedData });
+          console.log('⚠️ Error en análisis de IA:', analysisResult.error);
+          // Fallback: usar parseo incremental
+          finalProfileData = parsedData;
         }
-      } catch (saveError) {
-        console.error('❌ Error al guardar datos:', saveError);
-        // No retornamos error para no interrumpir la conversación
+      } catch (analyzeError) {
+        console.error('⚠️ Error al analizar onboarding (no crítico):', analyzeError);
+        // Fallback: usar parseo incremental
+        finalProfileData = parsedData;
       }
+    } else {
+      // Durante la conversación (mensajes 1-7):
+      // NO guardar datos parciales - esperar al análisis final
+      // Esto evita datos incorrectos del parseo incremental
+      console.log(`📝 Pregunta ${questionNumber}/9 - Continuando conversación...`);
     }
 
     // Add rate limit headers to successful response
@@ -238,11 +285,11 @@ export async function POST(request: NextRequest) {
         ...(env.NODE_ENV === 'development' && {
           debug: {
             questionNumber,
-            // parsedData: REMOVED - contiene información financiera sensible, no debe exponerse
             profileExists: !!profile,
             userMessages,
             totalMessages: chatHistory.length,
-            onboardingCompleted: userMessages >= 9
+            onboardingCompleted,
+            analyzedWithAI: userMessages >= 8
           }
         })
       },

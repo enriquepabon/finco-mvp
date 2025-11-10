@@ -1,7 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { supabaseAdmin } from '../../../../lib/supabase/server';
-import { sendOnboardingMessage } from '../../../../lib/gemini/client';
-import { getExpenseRegistrationPrompt } from '../../../../lib/gemini/specialized-prompts';
+import { supabaseAdmin } from '@/lib/supabase/server';
+import { sendOnboardingMessage } from '@/lib/gemini/client';
+import { getExpenseRegistrationPrompt } from '@/lib/gemini/specialized-prompts';
 
 interface ChatMessage {
   role: 'user' | 'assistant';

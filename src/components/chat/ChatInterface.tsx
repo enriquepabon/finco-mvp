@@ -3,7 +3,7 @@
 import { useRouter } from 'next/navigation';
 import BaseChatInterface from './BaseChatInterface';
 import { useChat } from '../../hooks/useChat';
-import { formatCashbeatMessage } from '../../lib/utils/chat-utils';
+import { formatCashbeatMessage } from '@/lib/utils/chat-utils';
 
 interface ChatInterfaceProps {
   onComplete?: () => void;
@@ -52,7 +52,7 @@ export default function ChatInterface({ onComplete, className = '' }: ChatInterf
             F
           </div>
           <div>
-            <h3 className="font-semibold">FINCO</h3>
+            <h3 className="font-semibold">MentorIA</h3>
             <p className="text-sm text-blue-200">Tu coach financiero personal</p>
           </div>
         </div>

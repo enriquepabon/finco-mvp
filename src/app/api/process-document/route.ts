@@ -1,5 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { supabase } from '../../../../lib/supabase/server';
+import { supabase } from '@/lib/supabase/server';
 
 export async function POST(request: NextRequest) {
   console.log('📄 Document Processing API - Iniciando procesamiento...');
@@ -122,7 +122,7 @@ Este es un placeholder para el contenido del PDF. Para implementar completamente
 
 El archivo contiene ${Math.round(buffer.length / 1024)}KB de datos.
 
-Para FINCO, este documento puede contener información financiera importante como:
+Para MentorIA, este documento puede contener información financiera importante como:
 - Estados de cuenta bancarios
 - Facturas y recibos
 - Informes financieros
@@ -157,7 +157,7 @@ Este es un placeholder para el contenido del documento Word. Para implementar co
 
 El archivo contiene ${Math.round(buffer.length / 1024)}KB de datos.
 
-Para FINCO, este documento puede contener:
+Para MentorIA, este documento puede contener:
 - Presupuestos personales
 - Listas de gastos
 - Planes financieros
@@ -180,7 +180,7 @@ async function processTextFile(file: File): Promise<string> {
       throw new Error('El archivo de texto está vacío');
     }
 
-    // Agregar contexto para FINCO
+    // Agregar contexto para MentorIA
     return `[Archivo de texto: ${file.name}]
 
 ${text}

@@ -2,11 +2,16 @@
 
 import { useState, useEffect, useRef } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
-import { X, Send, User, MessageCircle, DollarSign, Target, TrendingUp, Bot, ArrowLeft } from 'lucide-react';
+import { X, Send, User, MessageCircle, DollarSign, Target, TrendingUp, Bot, ArrowLeft, Receipt, Edit3, Mic } from 'lucide-react';
 import { useRouter } from 'next/navigation';
-import CashbeatLogo from '../ui/CashbeatLogo';
+import Image from 'next/image';
+import { BRAND_NAME } from '@/lib/constants/mentoria-brand';
 import SpecializedChatInterface from './SpecializedChatInterface';
+import InteractiveBudgetChat from '../budget/InteractiveBudgetChat';
+import TransactionModal from '../transactions/TransactionModal';
+import VoiceTransactionModal from '../transactions/VoiceTransactionModal';
 import { useFocusTrap } from '@/hooks/useFocusTrap';
+import { createClient } from '@supabase/supabase-js';
 
 interface ChatMessage {
   id: string;
@@ -18,9 +23,41 @@ interface ChatMessage {
 interface AdvancedChatModalProps {
   isOpen: boolean;
   onClose: () => void;
+  onProfileUpdate?: () => void; // Nueva prop para notificar actualizaciones
 }
 
 const CHAT_OPTIONS = [
+  {
+    id: 'register-transaction',
+    icon: Receipt,
+    title: 'Registrar transacción',
+    description: 'Agrega ingresos o gastos a tu presupuesto',
+    color: 'from-red-500 to-red-600',
+    isParent: true
+  },
+  {
+    id: 'expense',
+    icon: Receipt,
+    title: '  • Registro manual',
+    description: 'Formulario rápido para ingresar detalles',
+    color: 'from-red-500 to-red-600',
+    isChild: true
+  },
+  {
+    id: 'voice-expense',
+    icon: Mic,
+    title: '  • Registro por voz',
+    description: 'Usa tu voz para registrar gastos',
+    color: 'from-pink-500 to-rose-600',
+    isChild: true
+  },
+  {
+    id: 'edit-budget',
+    icon: Edit3,
+    title: 'Editar tu presupuesto',
+    description: 'Modifica categorías y montos de tu presupuesto',
+    color: 'from-amber-500 to-amber-600'
+  },
   {
     id: 'profile',
     icon: User,
@@ -58,16 +95,58 @@ const CHAT_OPTIONS = [
   }
 ];
 
-export default function AdvancedChatModal({ isOpen, onClose }: AdvancedChatModalProps) {
+export default function AdvancedChatModal({ isOpen, onClose, onProfileUpdate }: AdvancedChatModalProps) {
   const [selectedOption, setSelectedOption] = useState<string | null>(null);
   const [messages, setMessages] = useState<ChatMessage[]>([]);
   const [inputMessage, setInputMessage] = useState('');
   const [loading, setLoading] = useState(false);
+  const [showTransactionModal, setShowTransactionModal] = useState(false);
+  const [showVoiceModal, setShowVoiceModal] = useState(false);
+  const [activeBudgetId, setActiveBudgetId] = useState<string>('');
   const messagesEndRef = useRef<HTMLDivElement>(null);
   const router = useRouter();
 
   // Focus trap for accessibility
   const focusTrapRef = useFocusTrap(isOpen);
+
+  // 🆕 Obtener el presupuesto activo del usuario
+  useEffect(() => {
+    if (isOpen) {
+      loadActiveBudget();
+    }
+  }, [isOpen]);
+
+  const loadActiveBudget = async () => {
+    try {
+      const supabase = createClient(
+        process.env.NEXT_PUBLIC_SUPABASE_URL!,
+        process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!
+      );
+
+      const { data: { user } } = await supabase.auth.getUser();
+      if (!user) return;
+
+      // Obtener el presupuesto del mes actual
+      const currentDate = new Date();
+      const { data: budget } = await supabase
+        .from('budgets')
+        .select('id')
+        .eq('user_id', user.id)
+        .eq('budget_month', currentDate.getMonth() + 1)
+        .eq('budget_year', currentDate.getFullYear())
+        .eq('status', 'active')
+        .maybeSingle();
+
+      if (budget) {
+        setActiveBudgetId(budget.id);
+        console.log('✅ Budget activo cargado:', budget.id);
+      } else {
+        console.log('⚠️ No se encontró presupuesto activo para este mes');
+      }
+    } catch (error) {
+      console.error('❌ Error cargando presupuesto activo:', error);
+    }
+  };
 
   const scrollToBottom = () => {
     messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' });
@@ -95,17 +174,32 @@ export default function AdvancedChatModal({ isOpen, onClose }: AdvancedChatModal
   }, [isOpen, onClose]);
 
   const handleOptionSelect = (optionId: string) => {
-    setSelectedOption(optionId);
-    
     // Redirigir según la opción seleccionada
     switch (optionId) {
+      case 'register-transaction':
+        // Solo expandir/colapsar submenú
+        // Si ya está seleccionado, colapsar. Si no, expandir.
+        setSelectedOption(selectedOption === 'register-transaction' ? null : 'register-transaction');
+        break;
+      case 'expense':
+        // Abrir modal de transacciones directamente (mantener el menú expandido)
+        setShowTransactionModal(true);
+        break;
+      case 'voice-expense':
+        // Abrir modal de registro por voz (mantener el menú expandido)
+        setShowVoiceModal(true);
+        break;
+      case 'edit-budget':
+        // Mostrar interfaz de edición de presupuesto
+        setSelectedOption('edit-budget');
+        break;
       case 'profile':
         // No cerrar el modal, mostrar el chat de edición de perfil
         setSelectedOption('profile');
         break;
       case 'budget':
-        onClose();
-        router.push('/budget/create');
+        // Mostrar la nueva experiencia interactiva de presupuesto
+        setSelectedOption('budget');
         break;
       case 'goals':
       case 'investments':
@@ -114,15 +208,16 @@ export default function AdvancedChatModal({ isOpen, onClose }: AdvancedChatModal
         setMessages([{
           id: '1',
           role: 'assistant',
-          content: `¡Hola! Soy Cashbeat IA, tu asistente financiero personal. ${optionId === 'goals' ? 'Las metas financieras' : 'La asesoría en inversiones'} está en desarrollo, pero puedo ayudarte con consejos generales de finanzas. ¿En qué puedo ayudarte hoy?`,
+          content: `¡Hola! Soy ${BRAND_NAME}, tu mentor financiero personal. ${optionId === 'goals' ? 'Las metas financieras' : 'La asesoría en inversiones'} está en desarrollo, pero puedo ayudarte con consejos generales de finanzas. ¿En qué puedo ayudarte hoy?`,
           timestamp: new Date()
         }]);
         break;
       case 'general':
+        setSelectedOption('general');
         setMessages([{
           id: '1',
           role: 'assistant',
-          content: '¡Hola! Soy Cashbeat IA, tu asistente financiero personal. ¿En qué puedo ayudarte hoy? Puedo darte consejos sobre presupuestos, ahorros, inversiones básicas, o cualquier duda financiera que tengas.',
+          content: `¡Hola! Soy ${BRAND_NAME}, tu mentor financiero personal. ¿En qué puedo ayudarte hoy? Puedo darte consejos sobre presupuestos, ahorros, inversiones básicas, o cualquier duda financiera que tengas.`,
           timestamp: new Date()
         }]);
         break;
@@ -167,6 +262,8 @@ export default function AdvancedChatModal({ isOpen, onClose }: AdvancedChatModal
     setSelectedOption(null);
     setMessages([]);
     setInputMessage('');
+    setShowTransactionModal(false);
+    setShowVoiceModal(false);
     onClose();
   };
 
@@ -192,15 +289,22 @@ export default function AdvancedChatModal({ isOpen, onClose }: AdvancedChatModal
             aria-labelledby="modal-title"
           >
             {/* Header */}
-            <div className="bg-gradient-to-r from-blue-500/10 to-purple-500/10 p-6 border-b border-gray-200/50">
+            <div className="bg-gradient-to-r from-[#2E5BFF]/10 to-[#00C48C]/10 p-6 border-b border-gray-200/50">
               <div className="flex items-center justify-between">
                 <div className="flex items-center gap-3">
-                  <div className="w-10 h-10 bg-white/80 rounded-full flex items-center justify-center">
-                    <CashbeatLogo variant="chat" size="small" />
+                  <div className="w-10 h-10 bg-white/80 rounded-full flex items-center justify-center p-1">
+                    <Image
+                      src="/images/logo-mentoria-icon.png"
+                      alt={BRAND_NAME}
+                      width={32}
+                      height={32}
+                      className="w-full h-full object-contain"
+                      priority
+                    />
                   </div>
                   <div>
-                    <h3 id="modal-title" className="font-bold text-gray-800">Cashbeat IA</h3>
-                    <p className="text-sm text-gray-600">Tu asistente financiero</p>
+                    <h3 id="modal-title" className="font-bold text-gray-800">{BRAND_NAME}</h3>
+                    <p className="text-sm text-gray-600">Tu mentor financiero</p>
                   </div>
                 </div>
                 <button
@@ -215,28 +319,44 @@ export default function AdvancedChatModal({ isOpen, onClose }: AdvancedChatModal
 
             {/* Content */}
             <div className="flex-1 overflow-hidden">
-              {!selectedOption ? (
+              {!selectedOption || selectedOption === 'register-transaction' ? (
                 // Options Menu
                 <div className="p-6 h-full overflow-y-auto">
                   <h4 className="text-lg font-semibold text-gray-800 mb-4">¿En qué puedo ayudarte?</h4>
                   <div className="space-y-3">
-                    {CHAT_OPTIONS.map((option) => {
+                    {CHAT_OPTIONS
+                      .filter(option => {
+                        // Mostrar opciones padre siempre
+                        if (!option.isChild) return true;
+                        // Mostrar opciones hijo solo si el padre está seleccionado
+                        return selectedOption === 'register-transaction';
+                      })
+                      .map((option) => {
                       const IconComponent = option.icon;
+                      
                       return (
                         <motion.button
                           key={option.id}
                           whileHover={{ scale: 1.02 }}
                           whileTap={{ scale: 0.98 }}
                           onClick={() => handleOptionSelect(option.id)}
-                          className="w-full p-4 rounded-xl bg-gradient-to-r bg-white/80 hover:bg-white/90 border border-gray-200/50 text-left transition-all duration-200 group"
+                          className={`w-full p-4 rounded-xl bg-gradient-to-r bg-white/80 hover:bg-white/90 border border-gray-200/50 text-left transition-all duration-200 group ${
+                            option.isChild ? 'ml-4 border-l-4' : ''
+                          }`}
                         >
                           <div className="flex items-start gap-3">
-                            <div className={`w-10 h-10 rounded-lg bg-gradient-to-r ${option.color} flex items-center justify-center text-white`}>
-                              <IconComponent size={20} />
+                            <div className={`w-10 h-10 rounded-lg bg-gradient-to-r ${option.color} flex items-center justify-center text-white ${
+                              option.isChild ? 'w-8 h-8' : ''
+                            }`}>
+                              <IconComponent size={option.isChild ? 16 : 20} />
                             </div>
                             <div className="flex-1">
-                              <h5 className="font-medium text-gray-800 group-hover:text-gray-900">{option.title}</h5>
-                              <p className="text-sm text-gray-600 mt-1">{option.description}</p>
+                              <h5 className={`font-medium text-gray-800 group-hover:text-gray-900 ${
+                                option.isChild ? 'text-sm' : ''
+                              }`}>{option.title}</h5>
+                              <p className={`text-sm text-gray-600 mt-1 ${
+                                option.isChild ? 'text-xs' : ''
+                              }`}>{option.description}</p>
                             </div>
                           </div>
                         </motion.button>
@@ -251,21 +371,26 @@ export default function AdvancedChatModal({ isOpen, onClose }: AdvancedChatModal
                   action="profile"
                   title="Editar Perfil Financiero"
                   className="h-full"
+                  onProfileUpdate={onProfileUpdate}
                 />
-              ) : selectedOption === 'expense' ? (
-                // Expense Registration Chat
-                <SpecializedChatInterface 
-                  onBack={handleBackToMenu}
-                  action="expense"
-                  title="Registrar Gasto"
-                  className="h-full"
-                />
-              ) : selectedOption === 'budget' ? (
+              ) : selectedOption === 'edit-budget' ? (
                 // Budget Edit Chat
                 <SpecializedChatInterface 
                   onBack={handleBackToMenu}
                   action="budget"
                   title="Editar Presupuesto"
+                  className="h-full"
+                />
+              ) : selectedOption === 'budget' ? (
+                // Interactive Budget Creation
+                <InteractiveBudgetChat 
+                  onBack={handleBackToMenu}
+                  onComplete={(budgetData) => {
+                    console.log('✅ Presupuesto creado:', budgetData);
+                    // Aquí puedes agregar lógica adicional, como mostrar confirmación
+                    // o redirigir al presupuesto creado
+                    handleBackToMenu();
+                  }}
                   className="h-full"
                 />
               ) : selectedOption === 'goals' ? (
@@ -362,6 +487,48 @@ export default function AdvancedChatModal({ isOpen, onClose }: AdvancedChatModal
             </div>
           </motion.div>
         </motion.div>
+      )}
+
+      {/* Modal de Transacciones */}
+      {showTransactionModal && (
+        <TransactionModal
+          key="transaction-modal"
+          isOpen={showTransactionModal}
+          budgetId={activeBudgetId}
+          onClose={() => {
+            setShowTransactionModal(false);
+            // Mantener el menú expandido (register-transaction)
+          }}
+          onSuccess={() => {
+            setShowTransactionModal(false);
+            // Cerrar completamente después de éxito
+            setSelectedOption(null);
+            if (onProfileUpdate) {
+              onProfileUpdate(); // Recargar datos si es necesario
+            }
+          }}
+        />
+      )}
+
+      {/* Modal de Registro por Voz */}
+      {showVoiceModal && (
+        <VoiceTransactionModal
+          key="voice-modal"
+          isOpen={showVoiceModal}
+          budgetId={activeBudgetId}
+          onClose={() => {
+            setShowVoiceModal(false);
+            // Mantener el menú expandido (register-transaction)
+          }}
+          onSuccess={() => {
+            setShowVoiceModal(false);
+            // Cerrar completamente después de éxito
+            setSelectedOption(null);
+            if (onProfileUpdate) {
+              onProfileUpdate(); // Recargar datos si es necesario
+            }
+          }}
+        />
       )}
     </AnimatePresence>
   );

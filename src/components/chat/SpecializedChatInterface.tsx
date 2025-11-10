@@ -10,6 +10,7 @@ interface SpecializedChatInterfaceProps {
   action: 'profile' | 'expense' | 'budget' | 'goals' | 'investments' | 'general';
   title: string;
   className?: string;
+  onProfileUpdate?: () => void; // Nueva prop para notificar actualizaciones de perfil
 }
 
 const API_ENDPOINTS = {
@@ -34,7 +35,8 @@ export default function SpecializedChatInterface({
   onBack,
   action,
   title,
-  className = ''
+  className = '',
+  onProfileUpdate
 }: SpecializedChatInterfaceProps) {
   const {
     messages,
@@ -48,6 +50,7 @@ export default function SpecializedChatInterface({
     apiEndpoint: API_ENDPOINTS[action],
     welcomeMessage: INITIAL_MESSAGES[action],
     includeUserToken: true,
+    onProfileUpdate, // Pasar la callback al hook
     customRequestBody: (message, history) => ({
       message,
       chatHistory: history.map(msg => ({

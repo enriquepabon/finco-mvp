@@ -3,7 +3,7 @@
 import { ReactNode } from 'react';
 import { Send, Loader2 } from 'lucide-react';
 import { ChatMessage } from '../../types/chat';
-import { formatTime } from '../../lib/utils/chat-utils';
+import { formatTime } from '@/lib/utils/chat-utils';
 import { useChatSubmit } from '../../hooks/useChatSubmit';
 
 export interface BaseChatInterfaceProps {

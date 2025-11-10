@@ -6,7 +6,7 @@ import {
   parseChildrenCount,
   parseFullName,
   parseOnboardingResponse,
-} from '../../../lib/parsers/onboarding-parser';
+} from '@/lib/parsers/onboarding-parser';
 
 describe('parseColombianCurrency', () => {
   describe('millions format', () => {

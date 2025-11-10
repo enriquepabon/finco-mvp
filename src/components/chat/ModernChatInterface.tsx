@@ -3,12 +3,12 @@
 import { useState, useEffect } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { Send, Sparkles, CheckCircle } from 'lucide-react';
-import { supabase } from '../../../lib/supabase/client';
+import { supabase } from '@/lib/supabase/client';
 import { useRouter } from 'next/navigation';
 import CashbeatLogo from '../ui/CashbeatLogo';
 import { useChat } from '../../hooks/useChat';
 import { useChatSubmit } from '../../hooks/useChatSubmit';
-import { formatCashbeatMessage, formatTime } from '../../lib/utils/chat-utils';
+import { formatCashbeatMessage, formatTime } from '@/lib/utils/chat-utils';
 import { ChatMessage } from '../../types/chat';
 
 interface ModernChatInterfaceProps {

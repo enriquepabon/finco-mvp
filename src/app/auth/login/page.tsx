@@ -2,9 +2,10 @@
 
 import { useState, useEffect } from 'react';
 import Link from 'next/link';
+import Image from 'next/image';
 import { useRouter, useSearchParams } from 'next/navigation';
-import { supabase } from '../../../../lib/supabase/client';
-import CashbeatLogo from '../../../components/ui/CashbeatLogo';
+import { supabase } from '@/lib/supabase/client';
+import { BRAND_NAME } from '@/lib/constants/mentoria-brand';
 
 export default function Login() {
   const [email, setEmail] = useState('');
@@ -125,11 +126,18 @@ export default function Login() {
         <div>
           <div className="text-center">
             <div className="flex justify-center mb-4">
-              <CashbeatLogo variant="main" size="large" />
+              <Image 
+                src="/images/logo-mentoria-full.png" 
+                alt={BRAND_NAME}
+                width={200} 
+                height={60}
+                className="h-16 w-auto"
+                priority
+              />
             </div>
             <h2 className="text-3xl font-bold text-gray-900">Iniciar sesión</h2>
             <p className="mt-2 text-sm text-gray-600">
-              Accede a tu cuenta de Cashbeat
+              Accede a tu cuenta de {BRAND_NAME}
             </p>
           </div>
         </div>

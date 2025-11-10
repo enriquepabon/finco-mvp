@@ -1,0 +1,149 @@
+/* Estilos personalizados para el Product Tour - MentorIA */
+
+/* Overlay muy sutil para que se vea el contenido con brillo normal */
+.driver-overlay {
+  background: rgba(0, 0, 0, 0.3) !important;  /* Reducido a 30% para brillo casi normal */
+  backdrop-filter: none !important;
+}
+
+/* Popover moderno y elegante */
+.mentoria-tour-popover.driver-popover {
+  background: linear-gradient(135deg, #667eea 0%, #764ba2 100%) !important;
+  border-radius: 16px !important;
+  box-shadow: 0 20px 60px rgba(0, 0, 0, 0.5), 0 0 100px rgba(102, 126, 234, 0.3) !important;
+  max-width: 400px !important;
+  padding: 0 !important;
+  border: 2px solid rgba(255, 255, 255, 0.2) !important;
+  z-index: 10001 !important;
+}
+
+/* Arrow del popover */
+.mentoria-tour-popover .driver-popover-arrow {
+  display: none !important;
+}
+
+/* Header del popover */
+.mentoria-tour-popover .driver-popover-title {
+  color: #ffffff !important;
+  font-size: 20px !important;
+  font-weight: 700 !important;
+  padding: 24px 24px 12px !important;
+  margin: 0 !important;
+  border-bottom: 1px solid rgba(255, 255, 255, 0.1) !important;
+}
+
+/* Descripción */
+.mentoria-tour-popover .driver-popover-description {
+  color: rgba(255, 255, 255, 0.95) !important;
+  font-size: 15px !important;
+  line-height: 1.6 !important;
+  padding: 20px 24px !important;
+  margin: 0 !important;
+}
+
+/* Footer con botones */
+.mentoria-tour-popover .driver-popover-footer {
+  background: rgba(0, 0, 0, 0.1) !important;
+  padding: 16px 24px !important;
+  border-top: 1px solid rgba(255, 255, 255, 0.1) !important;
+  display: flex !important;
+  justify-content: space-between !important;
+  align-items: center !important;
+}
+
+/* Botones */
+.mentoria-tour-popover .driver-popover-footer button {
+  background: rgba(255, 255, 255, 0.2) !important;
+  color: #ffffff !important;
+  border: 1px solid rgba(255, 255, 255, 0.3) !important;
+  padding: 10px 20px !important;
+  border-radius: 8px !important;
+  font-weight: 600 !important;
+  font-size: 14px !important;
+  cursor: pointer !important;
+  transition: all 0.2s ease !important;
+}
+
+.mentoria-tour-popover .driver-popover-footer button:hover {
+  background: rgba(255, 255, 255, 0.3) !important;
+  transform: translateY(-1px) !important;
+}
+
+/* Botón "Siguiente" destacado */
+.mentoria-tour-popover .driver-popover-next-btn {
+  background: #ffffff !important;
+  color: #667eea !important;
+  border: none !important;
+}
+
+.mentoria-tour-popover .driver-popover-next-btn:hover {
+  background: rgba(255, 255, 255, 0.95) !important;
+  box-shadow: 0 4px 12px rgba(255, 255, 255, 0.2) !important;
+}
+
+/* Botón cerrar */
+.mentoria-tour-popover .driver-popover-close-btn {
+  position: absolute !important;
+  top: 16px !important;
+  right: 16px !important;
+  background: rgba(255, 255, 255, 0.2) !important;
+  border: none !important;
+  color: #ffffff !important;
+  width: 32px !important;
+  height: 32px !important;
+  border-radius: 50% !important;
+  display: flex !important;
+  align-items: center !important;
+  justify-content: center !important;
+  font-size: 20px !important;
+  line-height: 1 !important;
+  padding: 0 !important;
+}
+
+.mentoria-tour-popover .driver-popover-close-btn:hover {
+  background: rgba(255, 255, 255, 0.3) !important;
+}
+
+/* Progreso */
+.mentoria-tour-popover .driver-popover-progress-text {
+  color: rgba(255, 255, 255, 0.8) !important;
+  font-size: 13px !important;
+  font-weight: 500 !important;
+}
+
+/* ✅ ELEMENTO DESTACADO - VISIBLE Y BRILLANTE */
+.driver-active-element {
+  box-shadow: 0 0 0 4px rgba(102, 126, 234, 1), 0 0 0 8px rgba(255, 255, 255, 0.8), 0 0 80px rgba(102, 126, 234, 0.8), 0 12px 40px rgba(0, 0, 0, 0.4) !important;
+  border-radius: 12px !important;
+  position: relative !important;
+  z-index: 10000 !important;
+  transition: all 0.3s ease !important;
+  animation: highlightPulse 2s ease-in-out infinite !important;
+}
+
+/* Animación de pulsación para el borde */
+@keyframes highlightPulse {
+  0%, 100% {
+    box-shadow: 0 0 0 4px rgba(102, 126, 234, 1), 0 0 0 8px rgba(255, 255, 255, 0.8), 0 0 80px rgba(102, 126, 234, 0.8), 0 12px 40px rgba(0, 0, 0, 0.4);
+  }
+  50% {
+    box-shadow: 0 0 0 4px rgba(102, 126, 234, 1), 0 0 0 12px rgba(255, 255, 255, 0.9), 0 0 100px rgba(102, 126, 234, 1), 0 12px 40px rgba(0, 0, 0, 0.4);
+  }
+}
+
+/* Animación de entrada del popover */
+@keyframes popoverSlideIn {
+  from {
+    opacity: 0;
+    transform: translateY(-10px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+.mentoria-tour-popover {
+  animation: popoverSlideIn 0.3s ease !important;
+}
+

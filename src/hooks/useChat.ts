@@ -1,7 +1,7 @@
 import { useState, useRef, useCallback, useEffect } from 'react';
-import { supabase } from '../../lib/supabase/client';
+import { supabase } from '@/lib/supabase/client';
 import { ChatMessage } from '../types/chat';
-import { generateMessageId, canSendMessage, getErrorMessage, getDefaultErrorMessage, scrollToElement } from '../lib/utils/chat-utils';
+import { generateMessageId, canSendMessage, getErrorMessage, getDefaultErrorMessage, scrollToElement } from '@/lib/utils/chat-utils';
 
 export interface UseChatOptions {
   apiEndpoint: string;
@@ -11,6 +11,7 @@ export interface UseChatOptions {
   onProgress?: (progress: number) => void;
   includeUserToken?: boolean;
   customRequestBody?: (message: string, history: ChatMessage[]) => Record<string, unknown>;
+  onProfileUpdate?: () => void; // Nueva callback para notificar actualizaciones de perfil
 }
 
 export interface UseChatReturn {
@@ -41,7 +42,8 @@ export function useChat(options: UseChatOptions): UseChatReturn {
     onComplete,
     onProgress,
     includeUserToken = true,
-    customRequestBody
+    customRequestBody,
+    onProfileUpdate
   } = options;
 
   const [messages, setMessages] = useState<ChatMessage[]>([]);
@@ -140,16 +142,23 @@ export function useChat(options: UseChatOptions): UseChatReturn {
             chatHistory: messages.map(m => ({
               role: m.role,
               content: m.content
-            })),
-            ...(userToken && { userToken })
+            }))
           };
+
+      // Prepare headers
+      const headers: Record<string, string> = {
+        'Content-Type': 'application/json',
+      };
+
+      // Add Authorization header if we have a token
+      if (userToken) {
+        headers['Authorization'] = `Bearer ${userToken}`;
+      }
 
       // Send request
       const response = await fetch(apiEndpoint, {
         method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-        },
+        headers,
         body: JSON.stringify(requestBody),
       });
 
@@ -161,6 +170,11 @@ export function useChat(options: UseChatOptions): UseChatReturn {
 
       if (data.error) {
         throw new Error(data.error);
+      }
+
+      // Si se actualizó el perfil, notificar al componente padre
+      if (data.profileUpdated && onProfileUpdate) {
+        onProfileUpdate();
       }
 
       // Add assistant response

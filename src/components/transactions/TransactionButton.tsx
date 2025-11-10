@@ -3,14 +3,14 @@
 /**
  * Botón flotante para registrar transacciones
  * Con dropdown de opciones: Manual y Voz
- * FINCO - Sistema de Registro de Transacciones
+ * MentorIA - Sistema de Registro de Transacciones
  */
 
 import { useState, useEffect } from 'react';
 import { PlusCircle, Edit, Mic } from 'lucide-react';
 import TransactionModal from './TransactionModal';
 import VoiceTransactionModal from './VoiceTransactionModal';
-import { createClient } from '@supabase/supabase-js';
+import { supabase } from '@/lib/supabase/client';
 
 interface TransactionButtonProps {
   budgetId?: string;
@@ -27,11 +27,6 @@ export default function TransactionButton({
   const [showVoiceModal, setShowVoiceModal] = useState(false);
   const [showDropdown, setShowDropdown] = useState(false);
   const [currentBudgetId, setCurrentBudgetId] = useState(propBudgetId);
-
-  const supabase = createClient(
-    process.env.NEXT_PUBLIC_SUPABASE_URL!,
-    process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!
-  );
 
   useEffect(() => {
     if (!propBudgetId) {
@@ -60,9 +55,10 @@ export default function TransactionButton({
         .eq('user_id', user.id)
         .eq('budget_month', currentMonth)
         .eq('budget_year', currentYear)
-        .single();
+        .maybeSingle(); // Usa maybeSingle() en lugar de single() para evitar error si no existe
 
-      if (error) {
+      // Solo mostrar error si es un error real (no "no encontrado")
+      if (error && error.code !== 'PGRST116') {
         console.error('❌ Error loading budget:', error);
       }
 
@@ -70,7 +66,7 @@ export default function TransactionButton({
         console.log('✅ Budget found:', data.id);
         setCurrentBudgetId(data.id);
       } else {
-        console.log('⚠️  No budget found for current month');
+        console.log('ℹ️  No budget found for current month - user can create one');
       }
     } catch (error) {
       console.error('❌ Error loading current budget:', error);

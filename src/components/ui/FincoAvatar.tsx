@@ -2,7 +2,7 @@
 
 import React, { useState, useEffect } from 'react'
 
-// Tipos de estados de FINCO
+// Tipos de estados de MentorIA
 export type FincoExpression = 'idle' | 'thinking' | 'speaking' | 'listening' | 'processing' | 'success' | 'error'
 
 interface FincoAvatarProps {
@@ -163,7 +163,7 @@ function FincoSphere3D({ expression, isAnimating, size }: {
             }}
           />
 
-          {/* Logo FINCO en el centro */}
+          {/* Logo MentorIA en el centro */}
           <div 
             className="absolute inset-0 flex items-center justify-center"
             style={{

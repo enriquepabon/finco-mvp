@@ -1,5 +1,5 @@
 /**
- * API de Transacciones - FINCO
+ * API de Transacciones - MentorIA
  * PUT: Editar transacción existente
  * DELETE: Eliminar transacción
  */

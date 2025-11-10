@@ -15,7 +15,7 @@ import {
   BarChart3,
   Download
 } from 'lucide-react';
-import { supabase } from '../../../lib/supabase/client';
+import { supabase } from '@/lib/supabase/client';
 
 interface FinancialReportProps {
   className?: string;
@@ -30,9 +30,10 @@ interface ReportData {
   };
   indicadores_clave: {
     patrimonio_neto: number;
-    capacidad_ahorro: number;
-    nivel_endeudamiento: string;
-    fondo_emergencia: string;
+    capacidad_ahorro_mensual: number;
+    nivel_endeudamiento_pct: number;
+    fondo_emergencia_meses: number;
+    presupuesto_usado_pct: number;
   };
   analisis_detallado: {
     ingresos: {
@@ -301,7 +302,7 @@ export default function FinancialReport({ className = '' }: FinancialReportProps
               style: 'currency', 
               currency: 'COP', 
               minimumFractionDigits: 0 
-            }).format(report.indicadores_clave.capacidad_ahorro)}
+            }).format(report.indicadores_clave.capacidad_ahorro_mensual)}
           </p>
         </div>
 
@@ -311,7 +312,7 @@ export default function FinancialReport({ className = '' }: FinancialReportProps
           </div>
           <h3 className="text-sm font-medium text-slate-600">Nivel de Endeudamiento</h3>
           <p className="text-2xl font-bold text-slate-900">
-            {report.indicadores_clave.nivel_endeudamiento}
+            {report.indicadores_clave.nivel_endeudamiento_pct}%
           </p>
         </div>
 
@@ -321,7 +322,7 @@ export default function FinancialReport({ className = '' }: FinancialReportProps
           </div>
           <h3 className="text-sm font-medium text-slate-600">Fondo de Emergencia</h3>
           <p className="text-2xl font-bold text-slate-900">
-            {report.indicadores_clave.fondo_emergencia}
+            {report.indicadores_clave.fondo_emergencia_meses} meses
           </p>
         </div>
       </div>

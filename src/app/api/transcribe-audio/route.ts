@@ -1,5 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { supabase } from '../../../../lib/supabase/server';
+import { supabase } from '@/lib/supabase/server';
 
 export async function POST(request: NextRequest) {
   console.log('🎙️ Audio Transcription API - Iniciando transcripción...');
@@ -163,7 +163,7 @@ Para obtener la transcripción automática completa, necesitas configurar un ser
 - Amazon Transcribe
 - Microsoft Speech Services
 
-Por favor, describe brevemente lo que dijiste en la nota de voz para que FINCO pueda ayudarte mejor.`;
+Por favor, describe brevemente lo que dijiste en la nota de voz para que MentorIA pueda ayudarte mejor.`;
     
   } catch (error) {
     return `[Nota de voz recibida - ${audioFile.name}]

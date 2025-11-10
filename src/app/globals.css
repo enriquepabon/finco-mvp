@@ -10,6 +10,15 @@
   --color-foreground: var(--foreground);
   --font-sans: var(--font-geist-sans);
   --font-mono: var(--font-geist-mono);
+  
+  /* MentorIA Brand Colors */
+  --color-primary-blue: #2E5BFF;
+  --color-success-green: #00C48C;
+  --color-text-dark: #2D3436;
+  --color-text-gray: #95A5A6;
+  --color-bg-light: #F8F9FA;
+  --color-warning: #FFB800;
+  --color-white: #FFFFFF;
 }
 
 @media (prefers-color-scheme: dark) {

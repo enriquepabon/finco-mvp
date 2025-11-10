@@ -25,7 +25,7 @@ async function testFinancialReport() {
   console.log('\n🤖 Generando reporte con IA...\n');
 
   try {
-    const model = genAI.getGenerativeModel({ model: "gemini-1.5-flash" });
+    const model = genAI.getGenerativeModel({ model: "gemini-pro" });
 
     const prompt = `Eres FINCO, un experto analista financiero. Genera un reporte financiero completo y profesional para:
 

@@ -1,7 +1,7 @@
 'use client';
 
 import { useState } from 'react';
-import { supabase } from '../../../../lib/supabase/client';
+import { supabase } from '@/lib/supabase/client';
 import { DollarSign, Edit3, Save, X, TrendingUp, TrendingDown, Home, CreditCard, Wallet } from 'lucide-react';
 
 interface UserProfile {

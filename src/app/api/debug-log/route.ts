@@ -1,5 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { env } from '../../../../lib/env';
+import { env } from '@/lib/env';
 
 export async function POST(request: NextRequest) {
   // 🔒 SEGURIDAD: Este endpoint SOLO está disponible en desarrollo

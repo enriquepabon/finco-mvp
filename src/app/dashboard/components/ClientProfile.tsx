@@ -1,7 +1,7 @@
 'use client';
 
 import { useState } from 'react';
-import { supabase } from '../../../../lib/supabase/client';
+import { supabase } from '@/lib/supabase/client';
 import { User, Edit3, Save, X, Baby, Heart, Calendar } from 'lucide-react';
 
 interface UserProfile {

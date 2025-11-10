@@ -1,11 +1,11 @@
 /**
- * API de Transacciones por Voz - FINCO
+ * API de Transacciones por Voz - MentorIA
  * POST: Procesar texto transcrito y usar Gemini para extraer datos
  */
 
 import { createClient } from '@supabase/supabase-js';
 import { NextRequest, NextResponse } from 'next/server';
-import { parseVoiceTransaction } from '../../../../../lib/gemini/transaction-parser';
+import { parseVoiceTransaction } from '@/lib/gemini/transaction-parser';
 
 const supabase = createClient(
   process.env.NEXT_PUBLIC_SUPABASE_URL!,

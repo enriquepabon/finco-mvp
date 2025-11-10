@@ -1,5 +1,5 @@
 // ============================================================================
-// SECCIÓN DE PRESUPUESTO INTELIGENTE - FINCO
+// SECCIÓN DE PRESUPUESTO INTELIGENTE - MentorIA
 // Versión: 1.0.0
 // Fecha: Enero 2025
 // Descripción: Componente que detecta presupuestos existentes y ofrece navegación directa
@@ -9,7 +9,7 @@
 
 import { useState, useEffect } from 'react';
 import { useRouter } from 'next/navigation';
-import { supabase } from '../../../../lib/supabase/client';
+import { supabase } from '@/lib/supabase/client';
 import { Calendar, Plus, TrendingUp, BarChart3, ArrowRight, Clock } from 'lucide-react';
 
 interface Budget {
@@ -99,7 +99,7 @@ export default function BudgetSection({ userId }: BudgetSectionProps) {
         <div className="text-6xl mb-4">💰</div>
         <h2 className="text-2xl font-bold text-gray-800 mb-2">Crear Presupuesto Inteligente</h2>
         <p className="text-gray-600 mb-6">
-          FINCO te ayudará a crear un presupuesto personalizado mediante una conversación inteligente.
+          MentorIA te ayudará a crear un presupuesto personalizado mediante una conversación inteligente.
         </p>
         <button
           onClick={() => router.push('/budget/create')}
@@ -246,7 +246,7 @@ export default function BudgetSection({ userId }: BudgetSectionProps) {
                       <div className="flex items-center gap-2 text-xs text-gray-500">
                         <span>{budget.status === 'active' ? 'Activo' : budget.status}</span>
                         {budget.chat_completed ? (
-                          <span className="text-green-600">• Completado via FINCO</span>
+                          <span className="text-green-600">• Completado via MentorIA</span>
                         ) : (
                           <span className="text-yellow-600 flex items-center gap-1">
                             <Clock className="w-3 h-3" />

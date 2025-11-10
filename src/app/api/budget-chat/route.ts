@@ -1,21 +1,23 @@
 // ============================================================================
-// API ENDPOINT PARA CHAT DE PRESUPUESTO CONVERSACIONAL - FINCO
+// API ENDPOINT PARA CHAT DE PRESUPUESTO CONVERSACIONAL - MentorIA
 // Versión: 2.0.0 - Sistema de Análisis Inteligente
 // Fecha: Enero 2025
 // Descripción: Endpoint especializado para análisis inteligente de presupuestos
 // ============================================================================
 
 import { NextRequest, NextResponse } from 'next/server';
-import { supabaseAdmin } from '../../../../lib/supabase/server';
+import { supabaseAdmin } from '@/lib/supabase/server';
 import { createClient, SupabaseClient } from '@supabase/supabase-js';
-import { env } from '../../../../lib/env';
-import { parseStructuredData, validateStructuredData, ParsedBudgetData } from '../../../../lib/parsers/structured-parser';
-import { analyzeBudgetData, generateFinalBudgetAnalysis, BudgetAnalysisData, AnalysisContext } from '../../../../lib/gemini/budget-analysis-client';
+import { env } from '@/lib/env';
+import { sendBudgetConversationalMessage, analyzeBudgetConversation, ChatMessage } from '@/lib/openai/client';
+import { parseStructuredData, validateStructuredData, ParsedBudgetData } from '@/lib/parsers/structured-parser';
+import { analyzeBudgetData, generateFinalBudgetAnalysis, BudgetAnalysisData, AnalysisContext } from '@/lib/gemini/budget-analysis-client';
 import { BudgetCategory, CategoryType } from '../../../types/budget';
 
 // Interfaz para la request
 interface BudgetChatRequest {
   message: string;
+  chatHistory?: ChatMessage[];
   questionNumber?: number;
   budgetId?: string;
   budgetPeriod?: {
@@ -207,6 +209,7 @@ export async function POST(request: NextRequest) {
     const body: BudgetChatRequest = await request.json();
     const { 
       message, 
+      chatHistory = [],
       questionNumber = 1, 
       budgetId, 
       budgetPeriod,
@@ -217,21 +220,36 @@ export async function POST(request: NextRequest) {
     // Usar period si está disponible, sino budgetPeriod, sino default
     const finalPeriod = period || budgetPeriod || { month: new Date().getMonth() + 1, year: new Date().getFullYear() };
 
-    console.log('🔄 Budget Chat API - Solicitud recibida:', { questionNumber, budgetId, budgetPeriod: finalPeriod, isStructuredData });
+    console.log('🔄 Budget Chat API - Solicitud recibida:', { 
+      questionNumber, 
+      budgetId, 
+      budgetPeriod: finalPeriod, 
+      isStructuredData,
+      historyLength: chatHistory.length 
+    });
 
-    // Auth is now handled by middleware.ts
-    // Create Supabase client (middleware ensures user is authenticated)
+    // Obtener token de autorización del header
+    const authHeader = request.headers.get('authorization');
+    if (!authHeader) {
+      return NextResponse.json(
+        { error: 'Token de autorización requerido' },
+        { status: 401 }
+      );
+    }
+
+    const token = authHeader.replace('Bearer ', '');
+    
+    // Create Supabase client with service role to validate token
     const supabase = createClient(
-      env.NEXT_PUBLIC_SUPABASE_URL,
-      env.NEXT_PUBLIC_SUPABASE_ANON_KEY
+      env.NEXT_PUBLIC_SUPABASE_URL!,
+      env.SUPABASE_SERVICE_ROLE_KEY!
     );
 
-    // Get authenticated user (guaranteed by middleware)
-    const { data: { user } } = await supabase.auth.getUser();
+    // Get authenticated user using the token
+    const { data: { user }, error: authError } = await supabase.auth.getUser(token);
 
-    if (!user) {
-      // This should never happen due to middleware, but keep as safety
-      console.error('❌ Usuario no encontrado');
+    if (authError || !user) {
+      console.error('❌ Error de autenticación:', authError);
       return NextResponse.json(
         { error: 'Usuario no autenticado' },
         { status: 401 }
@@ -241,7 +259,192 @@ export async function POST(request: NextRequest) {
     console.log('👤 Usuario autenticado:', user.email);
     console.log('📅 Período para presupuesto:', finalPeriod);
 
-    // Manejar datos estructurados con ANÁLISIS INTELIGENTE
+    // Obtener perfil del usuario para nombre completo
+    const { data: profile } = await supabase
+      .from('user_profiles')
+      .select('full_name')
+      .eq('user_id', user.id)
+      .single();
+
+    const userContext = {
+      full_name: profile?.full_name || user.user_metadata?.full_name || user.email?.split('@')[0] || 'amigo',
+      email: user.email || ''
+    };
+
+    // FLUJO CONVERSACIONAL PRINCIPAL CON MENTORIA
+    if (!isStructuredData) {
+      console.log('💬 Procesando mensaje conversacional con MentorIA...');
+      
+      try {
+        // Llamar a MentorIA con el contexto conversacional
+        const response = await sendBudgetConversationalMessage(
+          message,
+          userContext,
+          chatHistory
+        );
+
+        if (!response.success) {
+          return NextResponse.json({
+            message: response.message || 'Lo siento, hubo un problema temporal. Por favor intenta de nuevo.',
+            questionNumber,
+            isComplete: false
+          });
+        }
+
+        // Determinar progreso basado en el historial
+        const userMessages = chatHistory.filter((msg: ChatMessage) => msg.role === 'user').length;
+        const currentProgress = Math.min(Math.floor(userMessages / 2) + 1, 4); // 4 pasos
+        const isComplete = currentProgress >= 4 && userMessages >= 6; // Al menos 6 intercambios
+
+        // 🎯 Si la conversación está completa, usar IA para analizar y guardar
+        let finalBudgetId = budgetId;
+        if (isComplete && !budgetId) {
+          console.log('✅ Conversación completada - Analizando con IA para extraer datos...');
+          
+          try {
+            // 🤖 Usar GPT-4o-mini para analizar toda la conversación
+            const analysisResult = await analyzeBudgetConversation(chatHistory, userContext);
+
+            if (analysisResult.success && analysisResult.data) {
+              console.log('✅ Datos extraídos por IA:', {
+                ingresos: analysisResult.data.ingresos.length,
+                gastos_fijos: analysisResult.data.gastos_fijos.length,
+                gastos_variables: analysisResult.data.gastos_variables.length,
+                ahorros: analysisResult.data.ahorros.length
+              });
+
+              // Convertir a formato ParsedBudgetData
+              const parsedData: ParsedBudgetData = {
+                categories: [],
+                subcategories: {}
+              };
+
+              // Crear categoría de Ingresos
+              if (analysisResult.data.ingresos.length > 0) {
+                parsedData.categories.push({
+                  name: 'Ingresos',
+                  type: 'income',
+                  amount: analysisResult.data.ingresos.reduce((sum, i) => sum + i.monto, 0),
+                  icon: 'DollarSign',
+                  description: 'Ingresos mensuales',
+                  isEssential: true
+                });
+                
+                // Agregar subcategorías
+                parsedData.subcategories['Ingresos'] = analysisResult.data.ingresos.map(ingreso => ({
+                  name: ingreso.nombre,
+                  amount: ingreso.monto,
+                  description: `Ingreso: ${ingreso.nombre}`,
+                  icon: 'ArrowDownCircle'
+                }));
+              }
+
+              // Crear categoría de Gastos Fijos
+              if (analysisResult.data.gastos_fijos.length > 0) {
+                parsedData.categories.push({
+                  name: 'Gastos Fijos',
+                  type: 'fixed_expense',
+                  amount: analysisResult.data.gastos_fijos.reduce((sum, g) => sum + g.monto, 0),
+                  icon: 'Home',
+                  description: 'Gastos fijos mensuales',
+                  isEssential: true
+                });
+                
+                // Agregar subcategorías
+                parsedData.subcategories['Gastos Fijos'] = analysisResult.data.gastos_fijos.map(gasto => ({
+                  name: gasto.nombre,
+                  amount: gasto.monto,
+                  description: `Gasto fijo: ${gasto.nombre}`,
+                  icon: 'Minus'
+                }));
+              }
+
+              // Crear categoría de Gastos Variables
+              if (analysisResult.data.gastos_variables.length > 0) {
+                parsedData.categories.push({
+                  name: 'Gastos Variables',
+                  type: 'variable_expense',
+                  amount: analysisResult.data.gastos_variables.reduce((sum, g) => sum + g.monto, 0),
+                  icon: 'ShoppingCart',
+                  description: 'Gastos variables mensuales',
+                  isEssential: false
+                });
+                
+                // Agregar subcategorías
+                parsedData.subcategories['Gastos Variables'] = analysisResult.data.gastos_variables.map(gasto => ({
+                  name: gasto.nombre,
+                  amount: gasto.monto,
+                  description: `Gasto variable: ${gasto.nombre}`,
+                  icon: 'TrendingDown'
+                }));
+              }
+
+              // Crear categoría de Ahorros (como fixed_expense pero con flag especial)
+              if (analysisResult.data.ahorros.length > 0) {
+                parsedData.categories.push({
+                  name: 'Ahorros',
+                  type: 'fixed_expense', // Usamos fixed_expense porque no existe 'savings' en el enum
+                  amount: analysisResult.data.ahorros.reduce((sum, a) => sum + a.monto, 0),
+                  icon: 'PiggyBank',
+                  description: 'Metas de ahorro',
+                  isEssential: true
+                });
+                
+                // Agregar subcategorías
+                parsedData.subcategories['Ahorros'] = analysisResult.data.ahorros.map(ahorro => ({
+                  name: ahorro.nombre,
+                  amount: ahorro.monto,
+                  description: `Ahorro: ${ahorro.nombre}`,
+                  icon: 'TrendingUp'
+                }));
+              }
+
+              // Guardar presupuesto si hay datos
+              if (parsedData.categories.length > 0) {
+                // Crear presupuesto
+                const createdBudgetId = await getOrCreateBudget(supabase, user.id, finalPeriod);
+                finalBudgetId = createdBudgetId;
+                
+                // Guardar categorías
+                await saveBudgetCategories(supabase, createdBudgetId, user.id, parsedData);
+                
+                // Marcar como completado
+                await supabase
+                  .from('budgets')
+                  .update({ chat_completed: true })
+                  .eq('id', finalBudgetId);
+
+                console.log('🎉 Presupuesto guardado exitosamente! Budget ID:', finalBudgetId);
+              } else {
+                console.log('⚠️ No se extrajeron suficientes datos para crear el presupuesto');
+              }
+            } else {
+              console.log('⚠️ Error en análisis de IA:', analysisResult.error);
+            }
+          } catch (parseError) {
+            console.error('⚠️ Error al analizar/guardar presupuesto (no crítico):', parseError);
+            // No fallar la respuesta, solo logear el error
+          }
+        }
+
+        return NextResponse.json({
+          message: response.message,
+          questionNumber: currentProgress,
+          isComplete,
+          budgetId: finalBudgetId
+        });
+
+      } catch (error) {
+        console.error('❌ Error en conversación con MentorIA:', error);
+        return NextResponse.json({
+          message: 'Lo siento, tuve un problema procesando tu mensaje. ¿Podrías intentar de nuevo?',
+          questionNumber,
+          isComplete: false
+        });
+      }
+    }
+
+    // Manejar datos estructurados con ANÁLISIS INTELIGENTE (Legacy - mantener por compatibilidad)
     if (isStructuredData) {
       console.log('📊 Procesando datos estructurados con análisis...');
       try {

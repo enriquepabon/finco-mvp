@@ -1,9 +1,10 @@
 'use client';
 
 import { useState, useEffect, useRef, useCallback } from 'react';
-import { ChatMessage } from '../../../lib/gemini/client';
-import { supabase } from '../../../lib/supabase/client';
+import { ChatMessage } from '@/lib/gemini/client';
+import { supabase } from '@/lib/supabase/client';
 import { useRouter } from 'next/navigation';
+import { MENTORIA_COPY } from '@/lib/constants/mentoria-brand';
 import {
   Send,
   Mic,
@@ -21,12 +22,12 @@ import {
 } from 'lucide-react';
 import { motion, AnimatePresence } from 'framer-motion';
 import VoiceRecorderFixed from './VoiceRecorderFixed';
-import VoiceOrbInterface from './VoiceOrbInterface';
+import ConversationalVoiceInterface from './ConversationalVoiceInterface';
 import DocumentUploader from './DocumentUploader';
 import DynamicFormComponentFixed, { StructuredData } from '../ui/DynamicFormComponentFixed';
-import { parseStructuredData, validateStructuredData } from '../../../lib/parsers/structured-parser';
+import { parseStructuredData, validateStructuredData } from '@/lib/parsers/structured-parser';
 import MonthSelector from '../ui/MonthSelector';
-import { formatCashbeatMessage, generateMessageId as generateMsgId, scrollToElement } from '../../lib/utils/chat-utils';
+import { formatCashbeatMessage, generateMessageId as generateMsgId, scrollToElement } from '@/lib/utils/chat-utils';
 
 interface MultimodalChatInterfaceProps {
   onComplete?: () => void;
@@ -110,7 +111,7 @@ export default function MultimodalChatInterface({
     return session?.access_token || null;
   };
 
-  // Detectar tipo de formulario basado en la respuesta de FINCO
+  // Detectar tipo de formulario basado en la respuesta de MentorIA
   const detectFormType = (fincoMessage: string): string | null => {
     const lowerMessage = fincoMessage.toLowerCase();
     
@@ -162,7 +163,7 @@ export default function MultimodalChatInterface({
       
     } catch (error) {
       console.error('❌ Error enviando datos estructurados:', error);
-      setError('Error al procesar los datos. Por favor, intenta de nuevo.');
+      setError(MENTORIA_COPY.errors.saveFailed);
     } finally {
       setLoading(false);
     }
@@ -183,18 +184,20 @@ export default function MultimodalChatInterface({
   const sendStructuredMessage = async (data: StructuredData) => {
     const validToken = await getValidToken();
     if (!validToken) {
-      throw new Error('Token de autenticación no válido');
+      throw new Error(MENTORIA_COPY.errors.auth);
     }
 
     const apiEndpoint = chatType === 'budget' ? '/api/budget-chat' : '/api/chat';
 
     const response = await fetch(apiEndpoint, {
       method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
+      headers: {
+        'Content-Type': 'application/json',
+        'Authorization': `Bearer ${validToken}`
+      },
       body: JSON.stringify({
         message: JSON.stringify(data), // Enviar datos estructurados como string
         chatHistory: messages.map(m => ({ role: m.role, content: m.content })),
-        userToken: validToken,
         chatType,
         isStructuredData: true, // Flag para indicar que son datos estructurados
         period: { month: selectedMonth, year: selectedYear }, // Incluir período seleccionado
@@ -204,7 +207,8 @@ export default function MultimodalChatInterface({
 
     if (!response.ok) {
       const errorData = await response.json().catch(() => ({}));
-      throw new Error(`Error ${response.status}: ${errorData.error || 'Error del servidor'}`);
+      console.error('❌ Error en API:', response.status, errorData);
+      throw new Error(errorData.error || MENTORIA_COPY.errors.serverError);
     }
 
     const responseData = await response.json();
@@ -282,27 +286,8 @@ export default function MultimodalChatInterface({
     }
   }, [chatType]);
 
-  // Inicializar chat automáticamente para budget
-  useEffect(() => {
-    if (chatType === 'budget' && messages.length === 0) {
-      console.log('🏦 Iniciando chat de presupuesto automáticamente...');
-      
-      // Mensaje inicial de FINCO
-      const initialMessage: ExtendedChatMessage = {
-        id: Date.now().toString(),
-        role: 'assistant',
-        content: '¡Hola! Vamos a crear tu presupuesto de manera estructurada. Empecemos con tus **INGRESOS MENSUALES**. Usa la tabla para organizar todos tus ingresos por categoría y subcategoría.',
-        timestamp: new Date()
-      };
-      
-      setMessages([initialMessage]);
-      setProgress(1);
-      
-      // Mostrar formulario de ingresos automáticamente
-      setCurrentFormType('income');
-      setShowStructuredForm(true);
-    }
-  }, [chatType, messages.length]);
+  // NO inicializar chat automáticamente para budget - esperar primer mensaje del usuario
+  // Esto permite que MentorIA responda conversacionalmente
 
   const resetConversation = () => {
     setMessages([]);
@@ -323,11 +308,11 @@ export default function MultimodalChatInterface({
   const getWelcomeMessage = () => {
     switch (chatType) {
       case 'onboarding':
-        return '¡Hola! Soy FINCO, tu analista financiero personal con IA. 📊\n\nVoy a realizar un **análisis completo de tu situación financiera** con 9 preguntas estratégicas. Al final tendrás:\n\n✅ **Diagnóstico financiero personalizado**\n✅ **Indicadores clave calculados**\n✅ **Recomendaciones específicas**\n✅ **Plan de acción financiero**\n\nPuedes responder escribiendo, grabando tu voz 🎙️, o subiendo documentos financieros 📄.\n\n🎯 **Empezemos: ¿Cuál es tu nombre completo?**';
+        return '¡Hola! Soy MentorIA, tu analista financiero personal con IA. 📊\n\nVoy a realizar un **análisis completo de tu situación financiera** con 9 preguntas estratégicas. Al final tendrás:\n\n✅ **Diagnóstico financiero personalizado**\n✅ **Indicadores clave calculados**\n✅ **Recomendaciones específicas**\n✅ **Plan de acción financiero**\n\nPuedes responder escribiendo, grabando tu voz 🎙️, o subiendo documentos financieros 📄.\n\n🎯 **Empezemos: ¿Cuál es tu nombre completo?**';
       case 'budget':
-        return '¡Perfecto! Soy FINCO y te ayudaré a crear tu presupuesto personalizado. Puedes contarme sobre tus ingresos y gastos hablando, escribiendo, o subiendo documentos financieros. ¿Cómo prefieres comenzar?';
+        return '¡Hola! 👋 Soy **MentorIA**, tu coach personal de presupuestos.\n\nVoy a ayudarte a crear un presupuesto mensual claro y realista de forma conversacional. Puedes responder hablando 🎙️, escribiendo ✍️ o subiendo documentos 📄.\n\n¿Listo para empezar? **Dime "Hola" o "Empezar" para comenzar**';
       default:
-        return '¡Hola! Soy FINCO, tu coach financiero personal con IA. Puedo ayudarte con presupuestos, análisis financiero, metas de ahorro y más. Puedes hablar conmigo por voz, texto, o subir documentos. ¿En qué puedo ayudarte hoy?';
+        return '¡Hola! Soy MentorIA, tu coach financiero personal con IA. Puedo ayudarte con presupuestos, análisis financiero, metas de ahorro y más. Puedes hablar conmigo por voz, texto, o subir documentos. ¿En qué puedo ayudarte hoy?';
     }
   };
 
@@ -369,7 +354,7 @@ export default function MultimodalChatInterface({
       // Obtener token actualizado antes de la petición
       const validToken = await getValidToken();
       if (!validToken) {
-        throw new Error('Token de autenticación no válido');
+        throw new Error(MENTORIA_COPY.errors.auth);
       }
 
       // Enviar a la API - usar la API correcta según el tipo de chat
@@ -378,15 +363,15 @@ export default function MultimodalChatInterface({
       const response = await fetch(apiEndpoint, {
         method: 'POST',
         headers: {
-          'Content-Type': 'application/json'
+          'Content-Type': 'application/json',
+          'Authorization': `Bearer ${validToken}`
         },
         body: JSON.stringify({
           message: contextualContent,
-          chatHistory: messages.map(m => ({ // TODO el historial para contar correctamente las preguntas
+          chatHistory: messages.map(m => ({ 
             role: m.role,
             content: m.content
           })),
-          userToken: validToken,
           chatType,
           hasAttachments: !!attachments?.length,
           attachments,
@@ -398,29 +383,16 @@ export default function MultimodalChatInterface({
       if (!response.ok) {
         const errorData = await response.json().catch(() => ({}));
         console.error('❌ Error en API:', response.status, errorData);
-        throw new Error(`Error ${response.status}: ${errorData.error || 'Error del servidor'}`);
+        throw new Error(errorData.error || MENTORIA_COPY.errors.serverError);
       }
 
       const responseData = await response.json();
 
-      // Agregar respuesta de FINCO
+      // Agregar respuesta de MentorIA/MentorIA
       addMessage({
         role: 'assistant',
         content: responseData.message || 'Lo siento, no pude procesar tu mensaje.'
       });
-
-      // Detectar si necesitamos mostrar un formulario estructurado (solo para budget chat)
-      if (chatType === 'budget') {
-        const fincoMessage = responseData.message || '';
-        const formType = detectFormType(fincoMessage);
-        
-        if (formType) {
-          console.log('🎯 Formulario estructurado detectado:', formType);
-          setCurrentFormType(formType);
-          setShowStructuredForm(true);
-          setStructuredData(null); // Reset data
-        }
-      }
 
       // Actualizar progreso si es onboarding o presupuesto
       if ((chatType === 'onboarding' && responseData.debug?.questionNumber !== undefined) ||
@@ -452,11 +424,11 @@ export default function MultimodalChatInterface({
 
     } catch (error) {
       console.error('Error enviando mensaje:', error);
-      setError('Error enviando mensaje. Intenta de nuevo.');
+      setError(MENTORIA_COPY.errors.chatError);
       
       addMessage({
         role: 'assistant',
-        content: 'Lo siento, hubo un error procesando tu mensaje. Por favor intenta de nuevo.'
+        content: MENTORIA_COPY.errors.chatError
       });
     } finally {
       setLoading(false);
@@ -530,11 +502,13 @@ export default function MultimodalChatInterface({
     if (showVoiceRecorder) setShowVoiceRecorder(false);
   };
 
-  // Render immersive voice interface when in voice mode (onboarding only)
+  // Render conversational voice interface for onboarding in voice mode
   if (chatType === 'onboarding' && currentInputMode === 'voice' && showVoiceRecorder) {
     return (
-      <VoiceOrbInterface
-        onTranscriptionComplete={handleVoiceTranscription}
+      <ConversationalVoiceInterface
+        agentName="MentorIA"
+        initialMessage="¡Hola! Soy MentorIA, tu analista financiero personal con IA. Voy a realizar un análisis completo de tu situación financiera con 9 preguntas estratégicas. Empecemos: ¿Cuál es tu nombre completo?"
+        onUserMessage={handleConversationalMessageOnboarding}
         onClose={() => {
           // Switch back to text mode
           if (onModeChange) {
@@ -543,10 +517,166 @@ export default function MultimodalChatInterface({
             setInternalInputMode('text');
           }
         }}
-        isProcessing={loading}
-        disabled={isCompleted}
+        className="h-full"
       />
     );
+  }
+
+  // Render conversational voice interface for budget chat in voice mode
+  if (chatType === 'budget' && currentInputMode === 'voice') {
+    return (
+      <ConversationalVoiceInterface
+        agentName="MentorIA"
+        initialMessage="¡Hola! Soy MentorIA, tu coach personal de presupuestos. Voy a ayudarte a crear un presupuesto mensual claro y realista. Empecemos con tus ingresos mensuales. ¿Cuáles son todas tus fuentes de ingreso al mes?"
+        onUserMessage={handleConversationalMessage}
+        onClose={() => {
+          // Switch back to text mode
+          if (onModeChange) {
+            onModeChange('text');
+          } else {
+            setInternalInputMode('text');
+          }
+        }}
+        className="h-full"
+      />
+    );
+  }
+
+  // Función para manejar mensajes conversacionales en onboarding
+  async function handleConversationalMessageOnboarding(userMessage: string): Promise<string> {
+    try {
+      // Agregar mensaje del usuario al estado
+      addMessage({
+        role: 'user',
+        content: userMessage
+      });
+
+      const validToken = await getValidToken();
+      if (!validToken) {
+        return 'Lo siento, hay un problema de autenticación. Por favor, recarga la página.';
+      }
+
+      const apiEndpoint = '/api/chat';
+      
+      const response = await fetch(apiEndpoint, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': `Bearer ${validToken}`
+        },
+        body: JSON.stringify({
+          message: userMessage,
+          chatHistory: messages.map(m => ({ 
+            role: m.role,
+            content: m.content
+          })),
+          chatType: 'onboarding'
+        }),
+      });
+
+      if (!response.ok) {
+        return 'Lo siento, hubo un error. ¿Podrías repetir?';
+      }
+
+      const responseData = await response.json();
+
+      // Agregar respuesta de MentorIA al estado
+      addMessage({
+        role: 'assistant',
+        content: responseData.message
+      });
+
+      // Actualizar progreso
+      if (responseData.debug?.questionNumber !== undefined) {
+        setProgress(responseData.debug.questionNumber);
+      }
+
+      // Verificar si completó
+      if (responseData.debug?.questionNumber >= MAX_QUESTIONS || responseData.debug?.onboardingCompleted) {
+        setIsCompleted(true);
+        setTimeout(() => {
+          onComplete?.();
+          router.push('/dashboard');
+        }, 3000);
+      }
+
+      return responseData.message || 'Continúa, te escucho.';
+
+    } catch (error) {
+      console.error('Error en conversación:', error);
+      return 'Lo siento, tuve un problema. ¿Podrías repetir?';
+    }
+  }
+
+  // Función para manejar mensajes conversacionales (usado por ConversationalVoiceInterface)
+  async function handleConversationalMessage(userMessage: string): Promise<string> {
+    try {
+      // Agregar mensaje del usuario al estado
+      addMessage({
+        role: 'user',
+        content: userMessage
+      });
+
+      const validToken = await getValidToken();
+      if (!validToken) {
+        return 'Lo siento, hay un problema de autenticación. Por favor, recarga la página.';
+      }
+
+      const apiEndpoint = '/api/budget-chat';
+      
+      const response = await fetch(apiEndpoint, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': `Bearer ${validToken}`
+        },
+        body: JSON.stringify({
+          message: userMessage,
+          chatHistory: messages.map(m => ({ 
+            role: m.role,
+            content: m.content
+          })),
+          chatType: 'budget',
+          questionNumber: progress || 1
+        }),
+      });
+
+      if (!response.ok) {
+        return 'Lo siento, hubo un error. ¿Podrías repetir?';
+      }
+
+      const responseData = await response.json();
+
+      // Agregar respuesta de MentorIA al estado
+      addMessage({
+        role: 'assistant',
+        content: responseData.message
+      });
+
+      // Actualizar progreso
+      if (responseData.questionNumber !== undefined) {
+        setProgress(responseData.questionNumber);
+      }
+
+      // Verificar si completó
+      if (responseData.isComplete) {
+        setIsCompleted(true);
+        setTimeout(() => {
+          onComplete?.();
+          if (responseData.budgetId) {
+            router.push(`/dashboard/budget/${responseData.budgetId}`);
+          } else {
+            router.push('/dashboard');
+          }
+        }, 3000);
+      }
+
+      return responseData.message || 'Continúa, te escucho.';
+
+    } catch (error) {
+      console.error('Error en conversación:', error);
+      return 'Lo siento, tuve un problema. ¿Podrías repetir?';
+    }
   }
 
   return (

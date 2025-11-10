@@ -2,9 +2,10 @@
 
 import { useState, useEffect } from 'react';
 import { useRouter } from 'next/navigation';
-import { supabase } from '../../../lib/supabase/client';
+import Image from 'next/image';
+import { supabase } from '@/lib/supabase/client';
 import MultimodalChatInterface from '../../components/chat/MultimodalChatInterface';
-import CashbeatLogo from '../../components/ui/CashbeatLogo';
+import { BRAND_NAME } from '@/lib/constants/mentoria-brand';
 
 export default function Onboarding() {
   const router = useRouter();
@@ -331,7 +332,14 @@ export default function Onboarding() {
             <div className="text-center mb-8">
               <div className="flex justify-center items-center gap-3 mb-4">
                 <span className="text-3xl font-bold text-gray-900">¡Bienvenido a</span>
-                <CashbeatLogo variant="main" size="medium" />
+                <Image 
+                  src="/images/logo-mentoria-full.png" 
+                  alt={BRAND_NAME}
+                  width={150} 
+                  height={45}
+                  className="h-10 w-auto inline-block"
+                  priority
+                />
                 <span className="text-3xl font-bold text-gray-900">!</span>
               </div>
               <p className="text-gray-600">
@@ -430,9 +438,16 @@ export default function Onboarding() {
         {/* Content */}
         <div className="bg-white rounded-lg shadow-md p-8">
           <div className="text-center mb-6">
-            <CashbeatLogo variant="main" size="medium" />
+            <Image 
+              src="/images/logo-mentoria-full.png" 
+              alt={BRAND_NAME}
+              width={180} 
+              height={54}
+              className="h-12 w-auto mx-auto"
+              priority
+            />
             <h1 className="text-3xl font-bold text-blue-600 mb-2 mt-4">
-              ¡Bienvenido a
+              ¡Bienvenido!
             </h1>
             <button
               onClick={() => setOnboardingMode(null)}

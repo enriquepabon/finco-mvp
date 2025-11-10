@@ -6,8 +6,18 @@
 
 /**
  * Category types
+ * - income: Ingresos
+ * - expense: Gastos (clasificados por expense_type e is_essential)
+ * - savings: Ahorros
  */
-export type CategoryType = 'income' | 'fixed_expense' | 'variable_expense';
+export type CategoryType = 'income' | 'expense' | 'savings';
+
+/**
+ * Expense types (solo para category_type = 'expense')
+ * - fixed: Gasto Fijo
+ * - variable: Gasto Variable
+ */
+export type ExpenseType = 'fixed' | 'variable';
 
 /**
  * Transaction type
@@ -34,7 +44,10 @@ export interface BudgetCategory {
   icon?: string;
   color?: string;
   subcategories?: BudgetSubcategory[];
-  isEssential?: boolean;
+  
+  // Solo para gastos (category_type = 'expense')
+  expenseType?: ExpenseType;  // 'fixed' o 'variable'
+  isEssential?: boolean;      // true (esencial) o false (no esencial)
 }
 
 /**
@@ -73,8 +86,8 @@ export interface Budget {
 
   // Totals
   total_income: number;
-  total_fixed_expenses: number;
-  total_variable_expenses: number;
+  total_expenses: number;        // 🆕 Unificado (antes: total_fixed_expenses + total_variable_expenses)
+  total_savings: number;         // 🆕 Ahorros separados
 
   // Calculated
   net_balance: number;
@@ -103,7 +116,11 @@ export interface Category {
   description?: string;
   icon?: string;
   color?: string;
-  is_essential: boolean;
+  
+  // Solo para gastos (category_type = 'expense')
+  expense_type?: ExpenseType | null;  // 'fixed' o 'variable'
+  is_essential?: boolean | null;      // true (esencial) o false (no esencial)
+  
   created_at: string;
   updated_at: string;
 }
@@ -199,15 +216,16 @@ export interface BudgetSummary {
   period: BudgetPeriod;
   totals: {
     income: number;
-    fixedExpenses: number;
-    variableExpenses: number;
-    totalExpenses: number;
+    expenses: number;           // 🆕 Unificado (gastos totales)
+    savings: number;            // 🆕 Ahorros totales
     netBalance: number;
-    savingsRate: number;  // percentage
+    savingsRate: number;        // percentage
   };
   categoryBreakdown: Array<{
     name: string;
     type: CategoryType;
+    expenseType?: ExpenseType;  // 🆕 Para gastos: 'fixed' o 'variable'
+    isEssential?: boolean;      // 🆕 Para gastos: esencial o no
     planned: number;
     actual: number;
     variance: number;

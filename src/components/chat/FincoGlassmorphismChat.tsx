@@ -49,7 +49,7 @@ export default function FincoGlassmorphismChat({
   isOpen = true,
   onClose,
   onMinimize,
-  initialMessage = "¡Hola! Soy FINCO, tu asistente financiero personal. ¿En qué puedo ayudarte hoy?",
+  initialMessage = "¡Hola! Soy MentorIA, tu asistente financiero personal. ¿En qué puedo ayudarte hoy?",
   mode = 'floating'
 }: FincoGlassmorphismChatProps) {
   const [messages, setMessages] = useState<Message[]>([
@@ -125,7 +125,7 @@ export default function FincoGlassmorphismChat({
     messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' })
   }, [messages])
 
-  // Simular respuesta de FINCO
+  // Simular respuesta de MentorIA
   const simulateFincoResponse = async (userMessage: string, action?: string) => {
     setIsTyping(true)
     setFincoExpression('thinking')
@@ -247,7 +247,7 @@ export default function FincoGlassmorphismChat({
         <div className="bg-gradient-to-r from-white/20 to-white/10 backdrop-blur-sm border-b border-white/20 p-4">
           <div className="flex items-center justify-between">
             <div className="flex items-center gap-3">
-              {/* Avatar FINCO */}
+              {/* Avatar MentorIA */}
               <div className="relative">
                 <FincoAvatar
                   expression={fincoExpression}
@@ -259,7 +259,7 @@ export default function FincoGlassmorphismChat({
               </div>
               
               <div>
-                <h3 className="font-semibold text-gray-800">FINCO</h3>
+                <h3 className="font-semibold text-gray-800">MentorIA</h3>
                 <p className="text-sm text-gray-600">
                   {isTyping ? 'Escribiendo...' : isRecording ? 'Escuchando...' : 'Tu asesor financiero IA'}
                 </p>

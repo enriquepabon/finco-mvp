@@ -2,7 +2,7 @@
 
 /**
  * Modal reutilizable para registrar transacciones manualmente
- * FINCO - Sistema de Registro de Transacciones
+ * MentorIA - Sistema de Registro de Transacciones
  */
 
 import { useState, useEffect } from 'react';
@@ -21,6 +21,11 @@ interface Category {
   name: string;
   category_type: string;
   color_hex?: string;
+}
+
+interface Subcategory {
+  id: string;
+  name: string;
 }
 
 interface TransactionModalProps {
@@ -47,10 +52,16 @@ export default function TransactionModal({
   const [budgets, setBudgets] = useState<Budget[]>([]);
   const [categories, setCategories] = useState<Category[]>([]);
   
+  // 🆕 Estados para subcategorías
+  const [subcategories, setSubcategories] = useState<Subcategory[]>([]);
+  const [showSubcategoryInput, setShowSubcategoryInput] = useState(false);
+  const [newSubcategoryName, setNewSubcategoryName] = useState('');
+  
   const [formData, setFormData] = useState<CreateTransactionInput>({
     budget_id: budgetId || '',
     category_id: preselectedCategory?.id || '',
     description: '',
+    detail: '', // 🆕 Campo detail
     amount: 0,
     transaction_type: preselectedCategory?.type === 'income' ? 'income' : 'expense',
     transaction_date: new Date().toISOString().split('T')[0],
@@ -74,6 +85,16 @@ export default function TransactionModal({
       loadCategories(formData.budget_id);
     }
   }, [formData.budget_id]);
+
+  // 🆕 Cargar subcategorías cuando se selecciona una categoría
+  useEffect(() => {
+    if (formData.category_id) {
+      loadSubcategories(formData.category_id);
+    } else {
+      setSubcategories([]);
+      setShowSubcategoryInput(false);
+    }
+  }, [formData.category_id]);
 
   const loadBudgets = async () => {
     try {
@@ -112,6 +133,28 @@ export default function TransactionModal({
     }
   };
 
+  // 🆕 Cargar subcategorías de una categoría
+  const loadSubcategories = async (category_id: string) => {
+    try {
+      const { data, error } = await supabase
+        .from('budget_subcategories')
+        .select('id, name')
+        .eq('category_id', category_id)
+        .eq('is_active', true)
+        .order('name');
+
+      if (!error && data) {
+        setSubcategories(data);
+        // Resetear subcategory_id si no está en la lista
+        if (data.length > 0 && !data.find(s => s.id === formData.subcategory_id)) {
+          setFormData(prev => ({ ...prev, subcategory_id: undefined }));
+        }
+      }
+    } catch (err) {
+      console.error('Error loading subcategories:', err);
+    }
+  };
+
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     setError('');
@@ -131,15 +174,57 @@ export default function TransactionModal({
         throw new Error('Debes seleccionar un presupuesto');
       }
 
+      // 🆕 Validar subcategoría si es requerida
+      if (subcategories.length > 0 && !formData.subcategory_id && !newSubcategoryName.trim()) {
+        throw new Error('Esta categoría requiere una subcategoría. Selecciona una o crea una nueva.');
+      }
+
+      // 🆕 Crear nueva subcategoría si el usuario ingresó una
+      let subcategory_id = formData.subcategory_id;
+      if (newSubcategoryName.trim() && formData.category_id) {
+        const { data: { user } } = await supabase.auth.getUser();
+        if (!user) throw new Error('Usuario no autenticado');
+
+        const { data: newSubcategory, error: subcategoryError } = await supabase
+          .from('budget_subcategories')
+          .insert({
+            category_id: formData.category_id,
+            budget_id: formData.budget_id,
+            user_id: user.id,
+            name: newSubcategoryName.trim(),
+            budgeted_amount: 0,
+            actual_amount: 0
+          })
+          .select()
+          .single();
+
+        if (subcategoryError) {
+          throw new Error('Error al crear subcategoría: ' + subcategoryError.message);
+        }
+
+        subcategory_id = newSubcategory.id;
+        console.log('✅ New subcategory created:', subcategory_id);
+      }
+
       // Crear transacción
       const response = await fetch('/api/transactions', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify(formData)
+        body: JSON.stringify({
+          ...formData,
+          subcategory_id // 🆕 Incluir subcategory_id
+        })
       });
 
       if (!response.ok) {
         const errorData = await response.json();
+        
+        // 🆕 Manejar respuesta de subcategorías requeridas
+        if (errorData.requires_subcategory && errorData.available_subcategories) {
+          setSubcategories(errorData.available_subcategories);
+          throw new Error(errorData.error);
+        }
+        
         throw new Error(errorData.error || 'Error al crear transacción');
       }
 
@@ -149,6 +234,7 @@ export default function TransactionModal({
       setFormData({
         budget_id: budgetId || '',
         category_id: '',
+        subcategory_id: undefined,
         description: '',
         amount: 0,
         transaction_type: 'expense',
@@ -156,6 +242,8 @@ export default function TransactionModal({
         location: '',
         notes: ''
       });
+      setNewSubcategoryName('');
+      setShowSubcategoryInput(false);
 
       if (onSuccess) onSuccess();
       onClose();
@@ -245,8 +333,8 @@ export default function TransactionModal({
               required
             >
               <option value="">Selecciona un presupuesto</option>
-              {budgets.map(budget => (
-                <option key={budget.id} value={budget.id}>
+              {budgets.map((budget, index) => (
+                <option key={budget.id || `budget-${index}`} value={budget.id}>
                   {monthNames[budget.budget_month - 1]} {budget.budget_year}
                 </option>
               ))}
@@ -265,13 +353,72 @@ export default function TransactionModal({
               disabled={!formData.budget_id}
             >
               <option value="">Sin categoría</option>
-              {categories.map(category => (
-                <option key={category.id} value={category.id}>
+              {categories.map((category, index) => (
+                <option key={category.id || `category-${index}`} value={category.id}>
                   {category.name}
                 </option>
               ))}
             </select>
           </div>
+
+          {/* 🆕 Subcategorías */}
+          {subcategories.length > 0 && (
+            <div className="bg-blue-50 rounded-xl p-4 border-2 border-blue-200">
+              <label className="block text-sm font-semibold text-blue-900 mb-3">
+                📂 Subcategoría <span className="text-red-500">*</span>
+              </label>
+              
+              {/* Lista de subcategorías */}
+              <select
+                value={formData.subcategory_id || ''}
+                onChange={(e) => {
+                  setFormData({ ...formData, subcategory_id: e.target.value || undefined });
+                  if (e.target.value) {
+                    setShowSubcategoryInput(false);
+                    setNewSubcategoryName('');
+                  }
+                }}
+                className="w-full px-4 py-3 rounded-xl border border-gray-300 focus:ring-2 focus:ring-blue-500 focus:border-transparent mb-3"
+              >
+                <option value="">Selecciona una subcategoría</option>
+                {subcategories.map((sub, index) => (
+                  <option key={sub.id || `subcategory-${index}`} value={sub.id}>
+                    {sub.name}
+                  </option>
+                ))}
+              </select>
+
+              {/* Opción para crear nueva subcategoría */}
+              <div className="pt-3 border-t border-blue-200">
+                <label className="flex items-center gap-2 text-sm text-gray-700 mb-2 cursor-pointer">
+                  <input
+                    type="checkbox"
+                    checked={showSubcategoryInput}
+                    onChange={(e) => {
+                      setShowSubcategoryInput(e.target.checked);
+                      if (e.target.checked) {
+                        setFormData({ ...formData, subcategory_id: undefined });
+                      } else {
+                        setNewSubcategoryName('');
+                      }
+                    }}
+                    className="w-4 h-4 rounded border-gray-300 text-blue-600 focus:ring-blue-500"
+                  />
+                  <span className="font-medium">O crear una nueva subcategoría</span>
+                </label>
+                
+                {showSubcategoryInput && (
+                  <input
+                    type="text"
+                    value={newSubcategoryName}
+                    onChange={(e) => setNewSubcategoryName(e.target.value)}
+                    placeholder="Ej: Netflix, Spotify, Uber..."
+                    className="w-full px-4 py-3 rounded-xl border border-gray-300 focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                  />
+                )}
+              </div>
+            </div>
+          )}
 
           {/* Descripción */}
           <div>
@@ -287,6 +434,24 @@ export default function TransactionModal({
               className="w-full px-4 py-3 rounded-xl border border-gray-300 focus:ring-2 focus:ring-blue-500 focus:border-transparent"
               required
             />
+          </div>
+
+          {/* 🆕 Detalle específico */}
+          <div>
+            <label className="block text-sm font-medium text-gray-700 mb-2">
+              <FileText className="w-4 h-4 inline mr-2" />
+              Detalle específico <span className="text-gray-400 text-xs">(opcional)</span>
+            </label>
+            <input
+              type="text"
+              value={formData.detail || ''}
+              onChange={(e) => setFormData({ ...formData, detail: e.target.value })}
+              placeholder="ej: Préstamo de Juan - Cuota 1/3"
+              className="w-full px-4 py-3 rounded-xl border border-gray-300 focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+            />
+            <p className="text-xs text-gray-500 mt-1">
+              Ayuda a identificar transacciones específicas en tu subcategoría
+            </p>
           </div>
 
           {/* Monto y Fecha */}

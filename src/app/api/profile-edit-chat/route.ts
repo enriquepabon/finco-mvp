@@ -1,16 +1,16 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { supabaseAdmin } from '../../../../lib/supabase/server';
-import { sendOnboardingMessage } from '../../../../lib/gemini/client';
-import { getProfileEditPrompt } from '../../../../lib/gemini/specialized-prompts';
-import { processAIUpdate } from '../../../../lib/parsers/ai-response-parser';
-import { features } from '../../../../lib/env';
-import { getCachedResponse, setCachedResponse } from '../../../../lib/cache/gemini-cache';
+import { supabaseAdmin } from '@/lib/supabase/server';
+import { sendMessageToGemini } from '@/lib/gemini/client';
+import { getProfileEditPrompt } from '@/lib/gemini/specialized-prompts';
+import { processAIUpdate } from '@/lib/parsers/ai-response-parser';
+import { features } from '@/lib/env';
+import { getCachedResponse, setCachedResponse } from '@/lib/cache/gemini-cache';
 import {
   checkRateLimit,
   getIdentifier,
   createRateLimitHeaders,
   createRateLimitError,
-} from '../../../../lib/rate-limit';
+} from '@/lib/rate-limit';
 import { ChatMessage, ChatHistory, ChatRequest } from '../../../types/chat';
 import { OnboardingData } from '../../../types/onboarding';
 
@@ -110,12 +110,12 @@ export async function POST(request: NextRequest) {
           message: cachedAIMessage,
         };
       } else {
-        // Call Gemini AI
-        // Filter out system messages as sendOnboardingMessage only accepts 'user' | 'assistant'
+        // Call OpenAI (migrated from Gemini) with specialized profile edit prompt
+        // Filter out system messages as sendMessageToGemini only accepts 'user' | 'assistant'
         const filteredHistory = chatHistory.filter(msg => msg.role !== 'system') as Array<{role: 'user' | 'assistant'; content: string}>;
-        aiResponse = await sendOnboardingMessage(
-          specializedPrompt,
-          { full_name: user.user_metadata?.full_name, email: user.email },
+        aiResponse = await sendMessageToGemini(
+          message, // User's actual message
+          specializedPrompt, // Profile edit context/instructions
           filteredHistory
         );
 

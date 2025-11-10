@@ -2,9 +2,10 @@
 
 import { useState, useEffect } from 'react';
 import Link from 'next/link';
+import Image from 'next/image';
 import { useRouter } from 'next/navigation';
-import { supabase } from '../../../../lib/supabase/client';
-import CashbeatLogo from '../../../components/ui/CashbeatLogo';
+import { supabase } from '@/lib/supabase/client';
+import { BRAND_NAME } from '@/lib/constants/mentoria-brand';
 
 export default function Register() {
   const [mounted, setMounted] = useState(false);
@@ -145,11 +146,18 @@ export default function Register() {
       <div className="max-w-md w-full space-y-8">
         <div className="text-center">
           <div className="flex justify-center mb-4">
-            <CashbeatLogo variant="main" size="large" />
+            <Image 
+              src="/images/logo-mentoria-full.png" 
+              alt={BRAND_NAME}
+              width={200} 
+              height={60}
+              className="h-16 w-auto"
+              priority
+            />
           </div>
           <h2 className="text-3xl font-bold text-gray-900">Crear cuenta</h2>
           <p className="mt-2 text-sm text-gray-600">
-            Únete a Cashbeat y toma control de tus finanzas
+            Únete a {BRAND_NAME} y toma control de tus finanzas
           </p>
         </div>
 
