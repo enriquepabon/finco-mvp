@@ -61,7 +61,7 @@ export default function MultimodalChatInterface({
   const [inputMessage, setInputMessage] = useState('');
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState('');
-  const [progress, setProgress] = useState(0);
+  const [progress, setProgress] = useState(1); // Comenzar en 1 (primera pregunta)
   const [isCompleted, setIsCompleted] = useState(false);
   const [showVoiceRecorder, setShowVoiceRecorder] = useState(false);
   const [showDocumentUploader, setShowDocumentUploader] = useState(false);
@@ -94,6 +94,13 @@ export default function MultimodalChatInterface({
   useEffect(() => {
     scrollToElement(messagesEndRef);
   }, [messages]);
+
+  // Auto-focus en el input después de cada respuesta (si no está en modo voz)
+  useEffect(() => {
+    if (!loading && currentInputMode === 'text' && inputRef.current) {
+      inputRef.current.focus();
+    }
+  }, [loading, currentInputMode, messages]);
 
   // Automatically show voice recorder when in voice mode
   useEffect(() => {
@@ -388,6 +395,14 @@ export default function MultimodalChatInterface({
 
       const responseData = await response.json();
 
+      console.log('📊 Respuesta de API:', {
+        chatType,
+        questionNumber: chatType === 'onboarding' ? responseData.debug?.questionNumber : responseData.questionNumber,
+        onboardingCompleted: responseData.debug?.onboardingCompleted,
+        isComplete: responseData.isComplete,
+        message: responseData.message?.substring(0, 100)
+      });
+
       // Agregar respuesta de MentorIA/MentorIA
       addMessage({
         role: 'assistant',
@@ -402,20 +417,26 @@ export default function MultimodalChatInterface({
           ? responseData.debug.questionNumber 
           : responseData.questionNumber;
         
+        console.log('📊 Actualizando progreso:', { currentProgress, MAX_QUESTIONS });
         setProgress(currentProgress);
         
         // Verificar si está completado (por número de preguntas O por flag de completado)
-        const isCompleted = chatType === 'onboarding' 
-          ? (currentProgress >= MAX_QUESTIONS || responseData.debug.onboardingCompleted)
-          : (currentProgress >= MAX_QUESTIONS || responseData.isComplete);
+        const checkCompleted = chatType === 'onboarding' 
+          ? (currentProgress >= MAX_QUESTIONS || responseData.debug?.onboardingCompleted === true)
+          : (currentProgress >= MAX_QUESTIONS || responseData.isComplete === true);
         
-        if (isCompleted) {
+        console.log('✅ Verificando completado:', { checkCompleted, currentProgress, MAX_QUESTIONS });
+        
+        if (checkCompleted) {
+          console.log('🎉 Chat completado! Redirigiendo en 3 segundos...');
           setIsCompleted(true);
           setTimeout(() => {
             onComplete?.();
             if (chatType === 'budget' && responseData.budgetId) {
+              console.log('🔄 Redirigiendo a dashboard de presupuesto:', responseData.budgetId);
               router.push(`/dashboard/budget/${responseData.budgetId}`);
             } else {
+              console.log('🔄 Redirigiendo a dashboard principal');
               router.push('/dashboard');
             }
           }, 3000); // 3 segundos para que el usuario vea el mensaje final
