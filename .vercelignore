@@ -21,6 +21,10 @@ dist
 !README.md
 docs/
 
+# Test pages (no necesarias en producción)
+src/app/test-*
+src/app/finco-demo
+
 # Scripts de testing
 scripts/test-*.js
 scripts/diagnose-*.js
