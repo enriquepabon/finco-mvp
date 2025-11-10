@@ -27,6 +27,7 @@ export function useTour({ tourId, steps, onComplete, autoStart = false }: UseTou
         showButtons: ['next', 'previous', 'close'],
         steps,
         onDestroyed: () => {
+          console.log(`✅ Tour ${tourId} completado, guardando en localStorage`);
           if (onComplete) {
             onComplete();
           }
@@ -44,7 +45,10 @@ export function useTour({ tourId, steps, onComplete, autoStart = false }: UseTou
     if (autoStart && !hasStartedRef.current) {
       const hasSeenTour = localStorage.getItem(`tour_${tourId}_completed`);
       
+      console.log(`🎯 Tour ${tourId} - autoStart:`, autoStart, '- Ya visto:', !!hasSeenTour);
+      
       if (!hasSeenTour) {
+        console.log(`🚀 Iniciando tour ${tourId} por primera vez`);
         // Esperar un poco para que el DOM esté listo
         const timer = setTimeout(() => {
           driverRef.current?.drive();
@@ -52,6 +56,8 @@ export function useTour({ tourId, steps, onComplete, autoStart = false }: UseTou
         }, 500);
 
         return () => clearTimeout(timer);
+      } else {
+        console.log(`⏭️ Tour ${tourId} ya fue completado, saltando...`);
       }
     }
   }, [tourId, steps, onComplete, autoStart]);

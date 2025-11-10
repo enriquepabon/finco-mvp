@@ -176,7 +176,22 @@ export default function VoiceTransactionModal({
 
         recognitionRef.current.onerror = (event: SpeechRecognitionErrorEvent) => {
           console.error('❌ Speech recognition error:', event.error);
-          setError(`Error de reconocimiento: ${event.error}`);
+          
+          let errorMessage = `Error de reconocimiento: ${event.error}`;
+          
+          if (event.error === 'not-allowed') {
+            errorMessage = '🎤 Permisos de micrófono denegados. Por favor:\n\n1. Click en el ícono 🔒 o ⓘ en la barra de dirección\n2. Permite el acceso al micrófono\n3. Recarga la página e intenta de nuevo';
+          } else if (event.error === 'no-speech') {
+            errorMessage = '🔇 No se detectó voz. Habla más cerca del micrófono e intenta de nuevo.';
+          } else if (event.error === 'audio-capture') {
+            errorMessage = '🎙️ No se puede acceder al micrófono. Verifica que esté conectado y funcione correctamente.';
+          } else if (event.error === 'network') {
+            errorMessage = '📡 Error de conexión. Verifica tu internet e intenta de nuevo.';
+          } else if (event.error === 'service-not-allowed') {
+            errorMessage = '⚠️ Servicio de reconocimiento de voz no disponible. Intenta usar otro navegador (Chrome o Edge recomendados).';
+          }
+          
+          setError(errorMessage);
           setIsRecording(false);
         };
 
@@ -205,7 +220,29 @@ export default function VoiceTransactionModal({
     setIsRecording(true);
     
     try {
-      recognitionRef.current.start();
+      // Primero intentar acceder al micrófono explícitamente con getUserMedia
+      // Esto fuerza al navegador a mostrar el prompt de permisos
+      navigator.mediaDevices.getUserMedia({ audio: true })
+        .then((stream) => {
+          // Detener el stream inmediatamente, solo lo necesitábamos para solicitar permisos
+          stream.getTracks().forEach(track => track.stop());
+          
+          // Ahora sí iniciar el reconocimiento de voz
+          console.log('✅ Permisos de micrófono concedidos, iniciando reconocimiento...');
+          recognitionRef.current?.start();
+        })
+        .catch((err) => {
+          console.error('❌ Error solicitando permisos de micrófono:', err);
+          setIsRecording(false);
+          
+          if (err.name === 'NotAllowedError' || err.name === 'PermissionDeniedError') {
+            setError('🎤 Permisos de micrófono denegados.\n\nPasos para solucionarlo:\n\n1. Recarga la página completamente (F5 o Ctrl+R)\n2. Cuando aparezca el popup, selecciona "Permitir"\n3. Si no aparece popup, revisa el ícono 🔒 en la barra de dirección\n4. En "Permisos del sitio" → Micrófono → Permitir\n5. Recarga la página de nuevo');
+          } else if (err.name === 'NotFoundError') {
+            setError('🎙️ No se detectó ningún micrófono. Verifica que esté conectado correctamente.');
+          } else {
+            setError(`❌ Error: ${err.message}`);
+          }
+        });
     } catch (err) {
       console.error('Error starting recognition:', err);
       setError('Error al iniciar grabación');
