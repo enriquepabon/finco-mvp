@@ -2,7 +2,7 @@
 
 /**
  * Modal para registrar transacciones por voz con IA
- * Usa Web Speech API + Google Gemini
+ * Usa MediaRecorder + OpenAI Whisper
  * MentorIA - Sistema de Registro de Transacciones
  */
 
@@ -10,54 +10,6 @@ import { useState, useEffect, useRef } from 'react';
 import { X, Mic, MicOff, Save, Sparkles, AlertCircle, Check } from 'lucide-react';
 import { createClient } from '@supabase/supabase-js';
 import type { VoiceTransactionParsed } from '@/types/transaction';
-
-// Web Speech API type definitions
-interface SpeechRecognitionAlternative {
-  transcript: string;
-  confidence: number;
-}
-
-interface SpeechRecognitionResult {
-  [index: number]: SpeechRecognitionAlternative;
-  isFinal: boolean;
-  length: number;
-}
-
-interface SpeechRecognitionResultList {
-  [index: number]: SpeechRecognitionResult;
-  length: number;
-}
-
-interface SpeechRecognitionEvent extends Event {
-  resultIndex: number;
-  results: SpeechRecognitionResultList;
-}
-
-interface SpeechRecognitionErrorEvent extends Event {
-  error: string;
-  message: string;
-}
-
-interface SpeechRecognition extends EventTarget {
-  continuous: boolean;
-  interimResults: boolean;
-  lang: string;
-  maxAlternatives: number;
-  onstart: (() => void) | null;
-  onresult: ((event: SpeechRecognitionEvent) => void) | null;
-  onerror: ((event: SpeechRecognitionErrorEvent) => void) | null;
-  onend: (() => void) | null;
-  start(): void;
-  stop(): void;
-  abort(): void;
-}
-
-type SpeechRecognitionConstructor = new () => SpeechRecognition;
-
-interface WindowWithSpeechRecognition {
-  SpeechRecognition?: SpeechRecognitionConstructor;
-  webkitSpeechRecognition?: SpeechRecognitionConstructor;
-}
 
 interface VoiceTransactionModalProps {
   isOpen: boolean;
@@ -97,9 +49,11 @@ export default function VoiceTransactionModal({
   const [showNewCategoryInput, setShowNewCategoryInput] = useState(false);
   const [showNewSubcategoryInput, setShowNewSubcategoryInput] = useState(false);
 
-  const recognitionRef = useRef<SpeechRecognition | null>(null);
-  const retryCountRef = useRef<number>(0); // 🆕 Contador de reintentos
-  const MAX_RETRIES = 3; // 🆕 Máximo 3 reintentos
+  // Referencias para MediaRecorder
+  const mediaRecorderRef = useRef<MediaRecorder | null>(null);
+  const audioChunksRef = useRef<Blob[]>([]);
+  const streamRef = useRef<MediaStream | null>(null);
+  
   const supabase = createClient(
     process.env.NEXT_PUBLIC_SUPABASE_URL!,
     process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!
@@ -156,162 +110,137 @@ export default function VoiceTransactionModal({
     }
   };
 
+  // Cleanup: Detener grabación al cerrar el modal
   useEffect(() => {
-    // Inicializar Web Speech API
-    if (typeof window !== 'undefined' && ('webkitSpeechRecognition' in window || 'SpeechRecognition' in window)) {
-      const SpeechRecognition = (window as WindowWithSpeechRecognition).webkitSpeechRecognition || (window as WindowWithSpeechRecognition).SpeechRecognition;
-      if (SpeechRecognition) {
-        recognitionRef.current = new SpeechRecognition();
-        recognitionRef.current.continuous = false;
-        recognitionRef.current.interimResults = false;
-        recognitionRef.current.lang = 'es-CO';
-
-        recognitionRef.current.onresult = (event: SpeechRecognitionEvent) => {
-          const transcript = event.results[0][0].transcript;
-          console.log('🎤 Transcribed:', transcript);
-          setTranscript(transcript);
-          setIsRecording(false);
-          retryCountRef.current = 0; // 🆕 Resetear contador de reintentos al éxito
-
-          // Auto-procesar con IA
-          processWithAI(transcript);
-        };
-
-        recognitionRef.current.onerror = (event: SpeechRecognitionErrorEvent) => {
-          console.error('❌ Speech recognition error:', event.error);
-          
-          let errorMessage = `Error de reconocimiento: ${event.error}`;
-          
-          if (event.error === 'not-allowed') {
-            errorMessage = '🎤 Permisos de micrófono denegados. Por favor:\n\n1. Click en el ícono 🔒 o ⓘ en la barra de dirección\n2. Permite el acceso al micrófono\n3. Recarga la página e intenta de nuevo';
-          } else if (event.error === 'no-speech') {
-            errorMessage = '🔇 No se detectó voz. Habla más cerca del micrófono e intenta de nuevo.';
-          } else if (event.error === 'audio-capture') {
-            errorMessage = '🎙️ No se puede acceder al micrófono. Verifica que esté conectado y funcione correctamente.';
-          } else if (event.error === 'network') {
-            // Verificar si todavía podemos reintentar
-            if (retryCountRef.current < MAX_RETRIES) {
-              retryCountRef.current += 1;
-              errorMessage = `📡 Error de conexión al servicio de reconocimiento.\n\n🔄 Reintentando (${retryCountRef.current}/${MAX_RETRIES})...\n\nSi persiste:\n- Verifica tu conexión a internet\n- Intenta recargar la página\n- Usa Chrome o Edge (recomendados)`;
-              
-              // Auto-retry después de 2 segundos para errores de red
-              setError(errorMessage);
-              setTimeout(() => {
-                console.log(`🔄 Reintentando reconocimiento de voz (${retryCountRef.current}/${MAX_RETRIES})...`);
-                setError('');
-                if (recognitionRef.current && !isRecording) {
-                  setIsRecording(true);
-                  try {
-                    recognitionRef.current.start();
-                  } catch (e) {
-                    console.error('❌ Error en retry:', e);
-                    setError('No se pudo reintentar. Intenta de nuevo manualmente.');
-                    setIsRecording(false);
-                    retryCountRef.current = 0; // Resetear contador
-                  }
-                }
-              }, 2000);
-              return; // No marcar como no grabando todavía, el retry lo hará
-            } else {
-              // Ya alcanzamos el máximo de reintentos
-              errorMessage = '📡 Error de conexión persistente al servicio de reconocimiento.\n\n❌ Se alcanzó el máximo de reintentos.\n\nPosibles soluciones:\n- Verifica tu conexión a internet\n- Recarga la página completamente\n- Usa Chrome o Edge (recomendados)\n- Intenta más tarde';
-              retryCountRef.current = 0; // Resetear para el próximo intento
-            }
-          } else if (event.error === 'service-not-allowed') {
-            errorMessage = '⚠️ Servicio de reconocimiento de voz no disponible. Intenta usar otro navegador (Chrome o Edge recomendados).';
-          }
-          
-          setError(errorMessage);
-          setIsRecording(false);
-        };
-
-        recognitionRef.current.onend = () => {
-          setIsRecording(false);
-        };
-      }
-    }
-
     return () => {
-      if (recognitionRef.current) {
-        recognitionRef.current.stop();
+      if (streamRef.current) {
+        streamRef.current.getTracks().forEach(track => track.stop());
       }
     };
   }, []);
 
-  const startRecording = () => {
-    if (!recognitionRef.current) {
-      setError('Tu navegador no soporta reconocimiento de voz. Usa Chrome o Edge.');
-      return;
-    }
-
-    setError('');
-    setTranscript('');
-    setParsedData(null);
-    setIsRecording(true);
-    retryCountRef.current = 0; // 🆕 Resetear contador al iniciar nueva grabación
-    
+  const startRecording = async () => {
     try {
-      // Verificar primero si los permisos ya fueron concedidos
-      if (navigator.permissions && navigator.permissions.query) {
-        navigator.permissions.query({ name: 'microphone' as PermissionName })
-          .then((permissionStatus) => {
-            console.log('📍 Estado de permisos de micrófono:', permissionStatus.state);
-            
-            if (permissionStatus.state === 'denied') {
-              setIsRecording(false);
-              setError('🚫 Los permisos de micrófono están BLOQUEADOS en tu navegador.\n\n⚠️ SOLUCIÓN:\n\n1. Cierra esta ventana\n2. Click en el ícono 🔒 junto a la URL (arriba izquierda)\n3. Busca "Micrófono" en permisos\n4. Cámbialo de "Bloquear" a "Permitir"\n5. IMPORTANTE: Cierra completamente el navegador\n6. Abre de nuevo onzaai.com\n7. Intenta grabar de nuevo');
-              return;
-            }
-            
-            // Si está en granted o prompt, intentar acceso
-            attemptMicrophoneAccess();
-          })
-          .catch((err) => {
-            console.warn('⚠️ No se pudo verificar permisos:', err);
-            // Si falla la verificación, intentar acceso directo
-            attemptMicrophoneAccess();
-          });
+      setError('');
+      setTranscript('');
+      setParsedData(null);
+      audioChunksRef.current = [];
+
+      console.log('🎤 Solicitando acceso al micrófono...');
+
+      // Solicitar acceso al micrófono
+      const stream = await navigator.mediaDevices.getUserMedia({ 
+        audio: {
+          echoCancellation: true,
+          noiseSuppression: true,
+          sampleRate: 44100,
+        } 
+      });
+
+      streamRef.current = stream;
+
+      // Crear MediaRecorder
+      const mimeType = MediaRecorder.isTypeSupported('audio/webm') 
+        ? 'audio/webm' 
+        : 'audio/mp4';
+
+      const mediaRecorder = new MediaRecorder(stream, { mimeType });
+      mediaRecorderRef.current = mediaRecorder;
+
+      // Capturar chunks de audio
+      mediaRecorder.ondataavailable = (event) => {
+        if (event.data.size > 0) {
+          audioChunksRef.current.push(event.data);
+        }
+      };
+
+      // Al terminar la grabación, transcribir
+      mediaRecorder.onstop = async () => {
+        console.log('🛑 Grabación detenida, transcribiendo...');
+        await transcribeAudio();
+      };
+
+      // Iniciar grabación
+      mediaRecorder.start();
+      setIsRecording(true);
+      console.log('✅ Grabación iniciada');
+
+    } catch (error: any) {
+      console.error('❌ Error al iniciar grabación:', error);
+      
+      if (error.name === 'NotAllowedError') {
+        setError('🎤 Permisos de micrófono denegados.\n\nPor favor:\n1. Click en el ícono 🔒 en la barra de dirección\n2. Permite el acceso al micrófono\n3. Recarga la página e intenta de nuevo');
+      } else if (error.name === 'NotFoundError') {
+        setError('🎙️ No se detectó ningún micrófono.\n\nVerifica que tu micrófono esté conectado correctamente.');
       } else {
-        // Navegador no soporta Permissions API, intentar acceso directo
-        attemptMicrophoneAccess();
+        setError(`Error al acceder al micrófono: ${error.message}`);
       }
-    } catch (err) {
-      console.error('Error starting recognition:', err);
-      setError('Error al iniciar grabación');
       setIsRecording(false);
     }
   };
 
-  const attemptMicrophoneAccess = () => {
-    // Primero intentar acceder al micrófono explícitamente con getUserMedia
-    navigator.mediaDevices.getUserMedia({ audio: true })
-      .then((stream) => {
-        // Detener el stream inmediatamente, solo lo necesitábamos para solicitar permisos
-        stream.getTracks().forEach(track => track.stop());
-        
-        // Ahora sí iniciar el reconocimiento de voz
-        console.log('✅ Permisos de micrófono concedidos, iniciando reconocimiento...');
-        recognitionRef.current?.start();
-      })
-      .catch((err) => {
-        console.error('❌ Error solicitando permisos de micrófono:', err);
-        setIsRecording(false);
-        
-        if (err.name === 'NotAllowedError' || err.name === 'PermissionDeniedError') {
-          setError('🚫 Permisos denegados.\n\n📱 INSTRUCCIONES POR DISPOSITIVO:\n\n💻 Windows/Mac Chrome:\n1. Click 🔒 en barra URL → Configuración del sitio\n2. Micrófono → Permitir\n3. Ctrl+Shift+R (recargar)\n\n📱 iPhone Safari:\n1. Ajustes → Safari → onzaai.com\n2. Micrófono → Permitir\n3. Cierra Safari completamente y vuelve a abrir\n\n📱 Android Chrome:\n1. Menú (⋮) → Información del sitio\n2. Permisos → Micrófono → Permitir\n3. Recargar página');
-        } else if (err.name === 'NotFoundError') {
-          setError('🎙️ No se detectó ningún micrófono. Verifica que esté conectado correctamente.');
-        } else if (err.name === 'NotReadableError') {
-          setError('🔴 El micrófono está en uso por otra aplicación. Cierra otras apps que usen el micrófono (Zoom, Teams, etc.)');
-        } else {
-          setError(`❌ Error: ${err.message}\n\nIntenta:\n1. Cerrar otras apps que usen el micrófono\n2. Reiniciar el navegador\n3. Usar Chrome o Edge (recomendado)`);
-        }
-      });
+  const stopRecording = () => {
+    if (mediaRecorderRef.current && mediaRecorderRef.current.state === 'recording') {
+      console.log('⏹️ Deteniendo grabación...');
+      mediaRecorderRef.current.stop();
+      setIsRecording(false);
+
+      // Detener el stream
+      if (streamRef.current) {
+        streamRef.current.getTracks().forEach(track => track.stop());
+      }
+    }
   };
 
-  const stopRecording = () => {
-    if (recognitionRef.current && isRecording) {
-      recognitionRef.current.stop();
+  const transcribeAudio = async () => {
+    try {
+      setLoading(true);
+      setError('');
+
+      // Crear blob de audio
+      const audioBlob = new Blob(audioChunksRef.current, { 
+        type: audioChunksRef.current[0]?.type || 'audio/webm' 
+      });
+
+      console.log('📦 Audio blob creado:', {
+        size: audioBlob.size,
+        type: audioBlob.type,
+      });
+
+      if (audioBlob.size === 0) {
+        setError('No se capturó audio. Intenta hablar más fuerte o cerca del micrófono.');
+        setLoading(false);
+        return;
+      }
+
+      // Enviar a API de transcripción
+      const formData = new FormData();
+      formData.append('audio', audioBlob, 'audio.webm');
+
+      console.log('🚀 Enviando audio a Whisper...');
+
+      const response = await fetch('/api/transcribe-audio', {
+        method: 'POST',
+        body: formData,
+      });
+
+      const data = await response.json();
+
+      if (!response.ok) {
+        throw new Error(data.error || 'Error al transcribir audio');
+      }
+
+      console.log('✅ Transcripción exitosa:', data.text);
+      setTranscript(data.text);
+
+      // Auto-procesar con IA
+      await processWithAI(data.text);
+
+    } catch (error: any) {
+      console.error('❌ Error en transcripción:', error);
+      setError(`Error al transcribir audio: ${error.message}`);
+    } finally {
+      setLoading(false);
     }
   };
 
