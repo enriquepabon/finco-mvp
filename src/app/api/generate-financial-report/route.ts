@@ -590,7 +590,12 @@ Responde ÚNICAMENTE con el JSON, sin explicaciones adicionales.`;
   try {
     console.log('🤖 Generando reporte con GPT-4o-mini...');
 
-    const completion = await openai.chat.completions.create({
+    // Timeout de 8 segundos para la llamada a OpenAI (dejando margen para Vercel)
+    const timeoutPromise = new Promise((_, reject) => 
+      setTimeout(() => reject(new Error('OpenAI timeout')), 8000)
+    );
+
+    const completionPromise = openai.chat.completions.create({
       model: 'gpt-4o-mini',
       messages: [
         {
@@ -603,8 +608,11 @@ Responde ÚNICAMENTE con el JSON, sin explicaciones adicionales.`;
         }
       ],
       temperature: 0.7,
+      max_tokens: 1500, // Limitar tokens para respuesta más rápida
       response_format: { type: "json_object" }
     });
+
+    const completion = await Promise.race([completionPromise, timeoutPromise]) as any;
 
     const responseContent = completion.choices[0]?.message?.content || '{}';
     const reportData = JSON.parse(responseContent);

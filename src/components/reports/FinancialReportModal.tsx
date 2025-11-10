@@ -140,7 +140,7 @@ export default function FinancialReportModal({ isOpen, onClose, budgetId }: Fina
         return;
       }
 
-      const response = await fetch('/api/generate-financial-report', {
+      const response = await fetch('/api/generate-financial-report-fast', {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',

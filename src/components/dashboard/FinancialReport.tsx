@@ -126,7 +126,7 @@ export default function FinancialReport({ className = '' }: FinancialReportProps
         throw new Error('No hay sesión activa');
       }
 
-      const response = await fetch('/api/generate-financial-report', {
+      const response = await fetch('/api/generate-financial-report-fast', {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
