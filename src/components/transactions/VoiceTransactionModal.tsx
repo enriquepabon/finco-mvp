@@ -98,6 +98,8 @@ export default function VoiceTransactionModal({
   const [showNewSubcategoryInput, setShowNewSubcategoryInput] = useState(false);
 
   const recognitionRef = useRef<SpeechRecognition | null>(null);
+  const retryCountRef = useRef<number>(0); // 🆕 Contador de reintentos
+  const MAX_RETRIES = 3; // 🆕 Máximo 3 reintentos
   const supabase = createClient(
     process.env.NEXT_PUBLIC_SUPABASE_URL!,
     process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!
@@ -169,6 +171,7 @@ export default function VoiceTransactionModal({
           console.log('🎤 Transcribed:', transcript);
           setTranscript(transcript);
           setIsRecording(false);
+          retryCountRef.current = 0; // 🆕 Resetear contador de reintentos al éxito
 
           // Auto-procesar con IA
           processWithAI(transcript);
@@ -186,25 +189,34 @@ export default function VoiceTransactionModal({
           } else if (event.error === 'audio-capture') {
             errorMessage = '🎙️ No se puede acceder al micrófono. Verifica que esté conectado y funcione correctamente.';
           } else if (event.error === 'network') {
-            errorMessage = '📡 Error de conexión al servicio de reconocimiento.\n\n🔄 Reintentando automáticamente...\n\nSi persiste:\n- Verifica tu conexión a internet\n- Intenta recargar la página\n- Usa Chrome o Edge (recomendados)';
-            
-            // Auto-retry después de 2 segundos para errores de red
-            setError(errorMessage);
-            setTimeout(() => {
-              console.log('🔄 Reintentando reconocimiento de voz después de error de red...');
-              setError('');
-              if (recognitionRef.current && !isRecording) {
-                setIsRecording(true);
-                try {
-                  recognitionRef.current.start();
-                } catch (e) {
-                  console.error('❌ Error en retry:', e);
-                  setError('No se pudo reintentar. Intenta de nuevo manualmente.');
-                  setIsRecording(false);
+            // Verificar si todavía podemos reintentar
+            if (retryCountRef.current < MAX_RETRIES) {
+              retryCountRef.current += 1;
+              errorMessage = `📡 Error de conexión al servicio de reconocimiento.\n\n🔄 Reintentando (${retryCountRef.current}/${MAX_RETRIES})...\n\nSi persiste:\n- Verifica tu conexión a internet\n- Intenta recargar la página\n- Usa Chrome o Edge (recomendados)`;
+              
+              // Auto-retry después de 2 segundos para errores de red
+              setError(errorMessage);
+              setTimeout(() => {
+                console.log(`🔄 Reintentando reconocimiento de voz (${retryCountRef.current}/${MAX_RETRIES})...`);
+                setError('');
+                if (recognitionRef.current && !isRecording) {
+                  setIsRecording(true);
+                  try {
+                    recognitionRef.current.start();
+                  } catch (e) {
+                    console.error('❌ Error en retry:', e);
+                    setError('No se pudo reintentar. Intenta de nuevo manualmente.');
+                    setIsRecording(false);
+                    retryCountRef.current = 0; // Resetear contador
+                  }
                 }
-              }
-            }, 2000);
-            return; // No marcar como no grabando todavía, el retry lo hará
+              }, 2000);
+              return; // No marcar como no grabando todavía, el retry lo hará
+            } else {
+              // Ya alcanzamos el máximo de reintentos
+              errorMessage = '📡 Error de conexión persistente al servicio de reconocimiento.\n\n❌ Se alcanzó el máximo de reintentos.\n\nPosibles soluciones:\n- Verifica tu conexión a internet\n- Recarga la página completamente\n- Usa Chrome o Edge (recomendados)\n- Intenta más tarde';
+              retryCountRef.current = 0; // Resetear para el próximo intento
+            }
           } else if (event.error === 'service-not-allowed') {
             errorMessage = '⚠️ Servicio de reconocimiento de voz no disponible. Intenta usar otro navegador (Chrome o Edge recomendados).';
           }
@@ -236,6 +248,7 @@ export default function VoiceTransactionModal({
     setTranscript('');
     setParsedData(null);
     setIsRecording(true);
+    retryCountRef.current = 0; // 🆕 Resetear contador al iniciar nueva grabación
     
     try {
       // Verificar primero si los permisos ya fueron concedidos
