@@ -119,32 +119,53 @@ Genera JSON conciso:
         success: true,
         report: {
           resumen_ejecutivo: {
-            salud_financiera: Math.round(financialHealth),
-            estado_salud: aiResponse.estado || 'Regular',
-            estado_emoji: aiResponse.emoji || '⚠️',
-            mensaje_motivacional: aiResponse.mensaje || 'Sigue así!'
+            titulo: 'Tu Situación Financiera Actual',
+            descripcion: aiResponse.mensaje || 'Análisis generado con IA',
+            puntuacion_financiera: Math.round(financialHealth).toString(),
+            estado_general: aiResponse.estado || 'Regular'
           },
-          analisis_presupuesto_vs_real: {
+          indicadores_clave: {
+            patrimonio_neto: 0,
+            capacidad_ahorro_mensual: actualIncome - actualExpenses,
+            nivel_endeudamiento_pct: 0,
+            fondo_emergencia_meses: 0,
+            presupuesto_usado_pct: expensesProgress
+          },
+          analisis_detallado: {
             ingresos: {
-              presupuestado: totalBudgeted,
-              real: actualIncome,
-              cumplimiento_pct: incomeProgress
+              evaluacion: `Ingresos reales: $${actualIncome.toLocaleString('es-CO')} (${incomeProgress}% de la meta)`,
+              recomendaciones: aiResponse.recomendaciones?.slice(0, 2) || ['Continúa registrando tus ingresos']
             },
             gastos: {
-              presupuestado: totalExpenses,
-              real: actualExpenses,
-              cumplimiento_pct: expensesProgress
+              evaluacion: `Gastos totales: $${actualExpenses.toLocaleString('es-CO')} (${expensesProgress}% del presupuesto)`,
+              recomendaciones: aiResponse.recomendaciones?.slice(2, 4) || ['Mantén el control de tus gastos']
             },
-            ahorros: {
-              real: actualSavings
+            activos: {
+              evaluacion: 'Información no disponible en este reporte rápido',
+              recomendaciones: ['Registra tus activos en el perfil']
+            },
+            deudas: {
+              evaluacion: 'Información no disponible en este reporte rápido',
+              recomendaciones: ['Registra tus deudas en el perfil']
             }
           },
-          recomendaciones_prioritarias: (aiResponse.recomendaciones || []).map((r: string, i: number) => ({
-            prioridad: i + 1,
+          recomendaciones_prioritarias: (aiResponse.recomendaciones || ['Mantén un seguimiento constante de tus finanzas']).map((r: string, i: number) => ({
             titulo: r.split(':')[0] || r,
-            descripcion: r
+            descripcion: r,
+            prioridad: i === 0 ? 'alta' : i === 1 ? 'media' : 'baja',
+            impacto: i === 0 ? 'Alto' : i === 1 ? 'Medio' : 'Bajo'
           })),
-          siguiente_paso: aiResponse.siguiente_paso || 'Revisa tu presupuesto mensualmente'
+          objetivos_sugeridos: [
+            {
+              objetivo: aiResponse.siguiente_paso || 'Mantener el presupuesto balanceado',
+              plazo: 'Corto plazo (1-3 meses)',
+              pasos: [
+                'Registra todas tus transacciones',
+                'Revisa tu presupuesto semanalmente',
+                'Ajusta gastos según sea necesario'
+              ]
+            }
+          ]
         },
         fallback: false
       });
@@ -184,40 +205,80 @@ function generateQuickFallback(profile: any, budget: any) {
   ));
 
   const estado = financialHealth >= 75 ? 'Excelente' : financialHealth >= 50 ? 'Bueno' : 'Regular';
-  const emoji = financialHealth >= 75 ? '✅' : financialHealth >= 50 ? '⚠️' : '🚨';
 
   return {
     resumen_ejecutivo: {
-      salud_financiera: Math.round(financialHealth),
-      estado_salud: estado,
-      estado_emoji: emoji,
-      mensaje_motivacional: `Hola ${profile?.full_name || 'Usuario'}, tu salud financiera está en ${Math.round(financialHealth)}/100. ${
-        financialHealth >= 75 ? '¡Excelente trabajo!' : 
-        financialHealth >= 50 ? 'Vas por buen camino.' : 
-        'Trabajemos juntos para mejorar.'
-      }`
+      titulo: 'Tu Situación Financiera Actual',
+      descripcion: `Hola ${profile?.full_name || 'Usuario'}, tu salud financiera está en ${Math.round(financialHealth)}/100. ${
+        financialHealth >= 75 ? '¡Excelente trabajo! Continúa con tus buenos hábitos financieros.' : 
+        financialHealth >= 50 ? 'Vas por buen camino. Mantén el enfoque en tus objetivos.' : 
+        'Trabajemos juntos para mejorar tu situación financiera.'
+      }`,
+      puntuacion_financiera: Math.round(financialHealth).toString(),
+      estado_general: estado
     },
-    analisis_presupuesto_vs_real: {
+    indicadores_clave: {
+      patrimonio_neto: 0,
+      capacidad_ahorro_mensual: actualIncome - actualExpenses,
+      nivel_endeudamiento_pct: 0,
+      fondo_emergencia_meses: 0,
+      presupuesto_usado_pct: expensesProgress
+    },
+    analisis_detallado: {
       ingresos: {
-        presupuestado: totalBudgeted,
-        real: actualIncome,
-        cumplimiento_pct: incomeProgress
+        evaluacion: `Tus ingresos actuales son de $${actualIncome.toLocaleString('es-CO')}, lo que representa un ${incomeProgress}% de tu meta de $${totalBudgeted.toLocaleString('es-CO')}.`,
+        recomendaciones: [
+          incomeProgress < 90 ? 'Busca oportunidades para aumentar tus ingresos' : 'Excelente cumplimiento de ingresos',
+          'Diversifica tus fuentes de ingreso cuando sea posible'
+        ]
       },
       gastos: {
-        presupuestado: totalExpenses,
-        real: actualExpenses,
-        cumplimiento_pct: expensesProgress
+        evaluacion: `Has gastado $${actualExpenses.toLocaleString('es-CO')} de un presupuesto de $${totalExpenses.toLocaleString('es-CO')} (${expensesProgress}%).`,
+        recomendaciones: [
+          expensesProgress > 100 ? 'Controla tus gastos, estás excediendo el presupuesto' : 'Buen control de gastos',
+          'Revisa tus gastos variables para encontrar áreas de mejora'
+        ]
       },
-      ahorros: {
-        real: actualSavings
+      activos: {
+        evaluacion: 'Información no disponible en este reporte rápido',
+        recomendaciones: ['Registra tus activos en tu perfil para un análisis más completo']
+      },
+      deudas: {
+        evaluacion: 'Información no disponible en este reporte rápido',
+        recomendaciones: ['Registra tus deudas para obtener estrategias de pago']
       }
     },
     recomendaciones_prioritarias: [
-      { prioridad: 1, titulo: 'Revisa tu presupuesto', descripcion: 'Mantén un seguimiento semanal de tus gastos' },
-      { prioridad: 2, titulo: 'Aumenta tus ahorros', descripcion: 'Intenta ahorrar al menos 10% de tus ingresos' },
-      { prioridad: 3, titulo: 'Reduce gastos variables', descripcion: 'Identifica gastos innecesarios que puedas eliminar' }
+      { 
+        titulo: 'Revisa tu presupuesto', 
+        descripcion: 'Mantén un seguimiento semanal de tus gastos para identificar patrones',
+        prioridad: 'alta',
+        impacto: 'Alto'
+      },
+      { 
+        titulo: 'Aumenta tus ahorros', 
+        descripcion: 'Intenta ahorrar al menos 10% de tus ingresos mensuales',
+        prioridad: 'media',
+        impacto: 'Medio'
+      },
+      { 
+        titulo: 'Reduce gastos variables', 
+        descripcion: 'Identifica gastos innecesarios que puedas eliminar o reducir',
+        prioridad: 'media',
+        impacto: 'Medio'
+      }
     ],
-    siguiente_paso: 'Registra todas tus transacciones durante esta semana'
+    objetivos_sugeridos: [
+      {
+        objetivo: 'Crear fondo de emergencia',
+        plazo: 'Corto plazo (3-6 meses)',
+        pasos: [
+          'Ahorra al menos $50,000 mensuales',
+          'Abre una cuenta de ahorros separada',
+          'Meta: 3 meses de gastos básicos'
+        ]
+      }
+    ]
   };
 }
 
