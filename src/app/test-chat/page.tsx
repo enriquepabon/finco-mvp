@@ -5,6 +5,9 @@ import { motion } from 'framer-motion'
 import FincoGlassmorphismChat from '@/components/chat/FincoGlassmorphismChat'
 import { MessageCircle, Sparkles, Zap, Heart } from 'lucide-react'
 
+// Prevent pre-rendering for test page
+export const dynamic = 'force-dynamic'
+
 export default function TestChatPage() {
   const [isChatOpen, setIsChatOpen] = useState(true)
   const [isMinimized, setIsMinimized] = useState(false)
