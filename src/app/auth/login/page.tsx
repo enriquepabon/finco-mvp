@@ -7,6 +7,10 @@ import { useRouter, useSearchParams } from 'next/navigation';
 import { supabase } from '@/lib/supabase/client';
 import { BRAND_NAME } from '@/lib/constants/mentoria-brand';
 
+// Prevent caching - important for mobile browsers
+export const dynamic = 'force-dynamic'
+export const revalidate = 0
+
 function LoginForm() {
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
